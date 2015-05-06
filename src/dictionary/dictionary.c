@@ -12,8 +12,10 @@ struct dictionary
     wchar_t *word;
 };
 
-void dictionary_init(struct dictionary *dict)
+struct dictionary * dictionary_new()
 {
+    struct dictionary *dict =
+        (struct dictionary *) malloc(sizeof(struct dictionary));
     dict->word = NULL;
 }
 
@@ -26,7 +28,7 @@ static void dictionary_free(struct dictionary *dict)
 void dictionary_done(struct dictionary *dict)
 {
     dictionary_free(dict);
-    dict->word = NULL;
+    free(dict);
 }
 
 void dictionary_insert(struct dictionary *dict, const wchar_t *word)
