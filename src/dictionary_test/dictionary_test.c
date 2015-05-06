@@ -28,7 +28,7 @@ int main(void)
         fprintf(stderr, "Dictionary empty!\n");
         return 1;
     }
-    if (wcscmp(buf, word))
+    if (!wcscmp(buf, word))
         printf("Words match\n");
     else
         printf("Mismatch!!\n");
