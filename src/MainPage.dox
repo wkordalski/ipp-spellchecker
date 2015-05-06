@@ -1,0 +1,70 @@
+/**
+  @mainpage Dokumentacja Słownika IPP
+
+  # Spell checker - część pierwsza
+  Duże zadanie zaliczeniowe polega na napisaniu spell checkera. Pierwszą częścią zadania jest napisanie biblioteki spell checkera oraz programu spellcheck korzystającego z biblioteki. Biblioteka powinna pozwalać na
+
+  - dodawanie, usuwanie oraz wyszukiwanie słów w słowniku,
+  - zapisywanie/wczytywanie słownika na dysku,
+  - podpowiadanie słów podobnych.
+
+  ## Wymagana funkcjonalność biblioteki
+
+  Biblioteka powinna udostępniać funkcje:
+
+  - `insert(word)`
+    Funkcja dodaje słowo word do słownika.
+  - `delete(word)`
+    Funkcja usuwa słowo word ze słownika.
+  - `find(word)`
+    Funkcja zwraca 1, jeśli słowo word znajduje się w słowniku lub 0 w przeciwnym przypadku.
+  - `save(filename)`
+    Funkcja zapisuje słownik w pliku o nazwie filename. 
+  - `load(filename)`
+    Funkcja wczytuje słownik z pliku o nazwie filename.
+  - `hints(word)`
+    Funkcja zwraca podpowiedzi ze słownika, czyli słowa podobne do słowa word.
+
+  ## Podpowiedzi
+
+  W tej części zadania należy zaimplementować następujący algorytm generowania podpowiedzi ze słownika:
+
+  Aby wygenerować podpowiedzi ze słownika dla słowa word stwórz wszystkie słowa powstałe w wyniku jednej z następujących modyfikacji zastosowanych do słowa word:
+
+  - zamiana jednej z liter słowa na dowolną inną literę alfabetu,
+  - usunięcie jednej z liter słowa,
+  - dodanie jednej litery do słowa (na początku, na końcu lub pomiędzy dwoma istniejącymi literami), 
+
+  a następnie wybierz spośród nich te, które znajdują się w słowniku.
+  ##Program spellcheck
+
+  Oprócz biblioteki należy zaimplementować program spellcheck, który będzie sprawdzał pisownię w danym tekście. W przypadku wywołania
+
+      ./spellcheck dict
+
+  program powinien wczytać z pliku dict słownik, a następnie czytać tekst ze standardowego wejścia (aż do napotkania znaku końca pliku EOF) i przepisywać go na standardowe wyjście, dostawiając znak # przed każdym słowem, którego nie ma w słowniku. Ponadto, użytkownik powinien mieć opcję wywołania
+
+      ./spellcheck -v dict
+
+  i wówczas program powinien dodatkowo dla każdego słowa slowo,  które występuje na wejściu, a którego nie ma w słowniku, wypisać na standardowe wyjście diagnostyczne (stderr) linię postaci:
+
+      W,Z slowo: podpowiedz1 podpowiedz2 ...
+
+  gdzie W i Z to odpowiednio numer wiersza i numer znaku w tym wierszu wystąpienia pierwszej litery słowa slowo na standardowym wejściu (zarówno wiersze, jak i znaki numerujemy od 1), natomiast podpowiedz1 podpowiedz2 ... to porozdzielane pojedynczymi spacjami wszystkie podpowiedzi ze słownika do słowa slowo. Podpowiedzi powinny być posortowane alfabetycznie.
+  (TODO: PRZY SORTOWANIU TRZEBA SIĘ ZASTANOWIĆ JAK PATRZYMY NA WIELKOŚĆ LITER) 
+
+  ## Uwagi
+
+  Słowem jest dowolny spójny ciąg składający się wyłącznie z małych lub wielkich liter alfabetu polskiego. Inne ciągi znaków nie powinny się znajdować w słowniku. Program spellcheck powinien jedynie dopisywać w odpowiednich miejscach znak #. Poza tym wszystkie słowa oraz znaki występujące pomiędzy nimi powinien przepisywać z wejścia na wyjście w postaci niezmienionej.
+  Format pliku przechowującego słownik jest dowolny. Przy wczytywaniu słownika program powinien wczytać z pliku wszystkie słowa i zignorować wszystkie znakie znajdujące się pomiędzy nimi.
+
+  ## Ograniczenia
+
+  ograniczenia
+  ## Implementacja
+
+  implementacja
+  ## Punktacja
+
+punktacja
+*/
