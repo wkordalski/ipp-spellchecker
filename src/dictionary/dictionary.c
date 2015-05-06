@@ -21,6 +21,7 @@ struct dictionary * dictionary_new()
     struct dictionary *dict =
         (struct dictionary *) malloc(sizeof(struct dictionary));
     dict->word = NULL;
+    return dict;
 }
 
 
