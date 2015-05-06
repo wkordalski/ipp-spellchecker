@@ -1,3 +1,7 @@
+/** @file
+  Prosta implementacja słownika.
+  */
+
 #include "dictionary.h"
 
 struct dictionary
