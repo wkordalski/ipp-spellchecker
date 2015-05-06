@@ -9,8 +9,8 @@ else (DEBUG)
     set(CMAKE_BUILD_TYPE RELEASE)
 endif (DEBUG)
 
-set(CMAKE_C_FLAGS_DEBUG "-std=c99 -Wall -pedantic -g")
-set(CMAKE_C_FLAGS_RELEASE "-std=c99 -O3")
+set(CMAKE_C_FLAGS_DEBUG "-std=gnu99 -Wall -pedantic -g")
+set(CMAKE_C_FLAGS_RELEASE "-std=gnu99 -O3")
 
 add_library (dictionary SHARED dictionary/dictionary.c)
 

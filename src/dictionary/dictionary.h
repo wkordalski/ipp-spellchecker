@@ -10,7 +10,6 @@
 
 #include <wchar.h>
 
-
 /**
   Struktura przechowująca słownik.
   */

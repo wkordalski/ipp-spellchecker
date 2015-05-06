@@ -3,6 +3,9 @@
   */
 
 #include "dictionary.h"
+#include <stdlib.h>
+
+#define _GNU_SOURCE
 
 struct dictionary
 {
@@ -32,7 +35,7 @@ void dictionary_insert(struct dictionary *dict, const wchar_t *word)
     dict->word = wcsdup(word);
 }
 
-const wchar_t* dictionary_getword(struct dictionary *)
+const wchar_t* dictionary_getword(struct dictionary *dict)
 {
     return dict->word;
 }
