@@ -7,14 +7,19 @@
  */
 
 #include "dictionary.h"
+#include <stdlib.h>
+
+#define _GNU_SOURCE
 
 struct dictionary
 {
     wchar_t *word;          /**< Jedyne słowo w słowniku */
 };
 
-void dictionary_init(struct dictionary *dict)
+struct dictionary * dictionary_new()
 {
+    struct dictionary *dict =
+        (struct dictionary *) malloc(sizeof(struct dictionary));
     dict->word = NULL;
 }
 
@@ -32,7 +37,7 @@ static void dictionary_free(struct dictionary *dict)
 void dictionary_done(struct dictionary *dict)
 {
     dictionary_free(dict);
-    dict->word = NULL;
+    free(dict);
 }
 
 void dictionary_insert(struct dictionary *dict, const wchar_t *word)
@@ -41,7 +46,7 @@ void dictionary_insert(struct dictionary *dict, const wchar_t *word)
     dict->word = wcsdup(word);
 }
 
-const wchar_t* dictionary_getword(struct dictionary *)
+const wchar_t* dictionary_getword(struct dictionary *dict)
 {
     return dict->word;
 }

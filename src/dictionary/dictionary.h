@@ -13,7 +13,6 @@
 
 #include <wchar.h>
 
-
 /**
   Struktura przechowująca słownik.
   */
@@ -24,7 +23,7 @@ struct dictionary;
   Inicjalizacja słownika.
   @param[in,out] dict Słownik.
   */
-void dictionary_init(struct dictionary *dict);
+struct dictionary * dictionary_new();
 
 
 /**
