@@ -1,3 +1,11 @@
+/** @file
+    Prosty klient biblioteki dictionary.
+    Wczytuje i wypisuje słowo.
+    @author Jakub Radoszeski
+    @data 2015-05-09
+    @copyright Uniwersytet Warszawski
+  */
+
 #include "dictionary.h"
 #include <locale.h>
 #include <stdio.h>

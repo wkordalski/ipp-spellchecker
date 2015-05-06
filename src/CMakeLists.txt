@@ -12,7 +12,8 @@ endif (DEBUG)
 set(CMAKE_C_FLAGS_DEBUG "-std=gnu99 -Wall -pedantic -g")
 set(CMAKE_C_FLAGS_RELEASE "-std=gnu99 -O3")
 
-include_directories (dictionary dictionary_test)
+include_directories (dictionary)
+add_subdirectory (dictionary dictionary_test)
 
 
 # add a target to generate API documentation with Doxygen
