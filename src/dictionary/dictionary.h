@@ -21,9 +21,10 @@ struct dictionary;
 
 /**
   Inicjalizacja słownika.
-  @param[in,out] dict Słownik.
+  Słownik ten należy zniszczyć za pomocą dictionary_done().
+  @return Nowy słownik
   */
-struct dictionary * dictionary_new();
+struct dictionary * dictionary_new(void);
 
 
 /**
