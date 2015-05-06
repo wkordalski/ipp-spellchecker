@@ -1,8 +1,11 @@
 /** @file
     Interfejs biblioteki obsługującej słownik.
+
     @author Jakub Pawlewicz <pan@mimuw.edu.pl>
     @copyright Uniwerstet Warszawski
     @date 2015-05-06
+    
+    @todo Rozbudować interfejs o obsługę plików.
  */
 
 #ifndef __DICTIONARY_H__
@@ -40,8 +43,8 @@ void dictionary_insert(struct dictionary *dict, const wchar_t* word);
 
 /**
   Zwraca słowo znajdujące się w słowniku.
-  @param[in,out] dictionary Słownik.
-  @return Słowo znajdujące się w słowniku
+  @param[in,out] dict Słownik.
+  @return Słowo znajdujące się w słowniku.
   */
 
 const wchar_t* dictionary_getword(struct dictionary *dict);
