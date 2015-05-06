@@ -19,23 +19,23 @@ struct dictionary;
 
 /**
   Inicjalizacja słownika.
-  @param[in,out] dictionary Słownik.
+  @param[in,out] dict Słownik.
   */
-void dictionary_init(struct dictionary*);
+void dictionary_init(struct dictionary *dict);
 
 
 /**
   Destrukcja słownika.
-  @param[in,out] dictionary Słownik.
+  @param[in,out] dict Słownik.
   */
-void dictionary_done(struct dictionary*);
+void dictionary_done(struct dictionary *dict);
 
 /**
   Wstawia podane słowo do słownika.
-  @param[in,out] dictionary Słownik.
+  @param[in,out] dict Słownik.
   @param[in] word Słowo, które należy wstawić do słownik.
   */
-void dictionary_insert(struct dictionary*, const wchar_t*);
+void dictionary_insert(struct dictionary *dict, const wchar_t* word);
 
 
 /**
@@ -44,6 +44,6 @@ void dictionary_insert(struct dictionary*, const wchar_t*);
   @return Słowo znajdujące się w słowniku
   */
 
-const wchar_t* dictionary_getword(struct dictionary *);
+const wchar_t* dictionary_getword(struct dictionary *dict);
 
 #endif /* __DICTIONARY_H__ */
