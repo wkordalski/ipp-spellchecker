@@ -1,10 +1,13 @@
-/** @file
+/** @defgroup dictionary Moduł dictionary
+    Biblioteka obsługująca słownik.
+  */
+/** @file 
     Interfejs biblioteki obsługującej słownik.
-
+   
+    @ingroup dictionary
     @author Jakub Pawlewicz <pan@mimuw.edu.pl>
     @copyright Uniwerstet Warszawski
     @date 2015-05-06
-    
     @todo Rozbudować interfejs o obsługę plików.
  */
 

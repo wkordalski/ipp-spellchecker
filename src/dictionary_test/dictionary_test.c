@@ -1,8 +1,12 @@
-/** @file
+/** @defgroup dictionary_test Moduł dictionary_test
     Prosty klient biblioteki dictionary.
     Wczytuje i wypisuje słowo.
-    @author Jakub Radoszeski
-    @data 2015-05-09
+  */
+/** @file
+    Główny plik modułu dictionary_test
+    @ingroup dictionary_test
+    @author Jakub Pawlewicz <pan@mimuw.edu.pl>
+    @date 2015-05-09
     @copyright Uniwersytet Warszawski
   */
 
@@ -10,6 +14,10 @@
 #include <locale.h>
 #include <stdio.h>
 
+/**
+  Funkcja main. 
+  Służy do testowania słownika przechowującego jedno słowo. 
+  */
 int main(void)
 {
     setlocale(LC_ALL, "en_US.UTF-8");
