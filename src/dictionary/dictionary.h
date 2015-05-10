@@ -7,13 +7,14 @@
     @ingroup dictionary
     @author Jakub Pawlewicz <pan@mimuw.edu.pl>
     @copyright Uniwerstet Warszawski
-    @date 2015-05-06
+    @date 2015-05-10
     @todo Rozbudować interfejs o obsługę plików.
  */
 
 #ifndef __DICTIONARY_H__
 #define __DICTIONARY_H__
 
+#include "word_list.h"
 #include <wchar.h>
 
 /**
@@ -36,20 +37,57 @@ struct dictionary * dictionary_new(void);
   */
 void dictionary_done(struct dictionary *dict);
 
+
 /**
   Wstawia podane słowo do słownika.
   @param[in,out] dict Słownik.
-  @param[in] word Słowo, które należy wstawić do słownik.
+  @param[in] word Słowo, które należy wstawić do słownika.
   */
 void dictionary_insert(struct dictionary *dict, const wchar_t* word);
 
 
 /**
-  Zwraca słowo znajdujące się w słowniku.
+  Usuwa podane słowo ze słownika, jeśli istnieje.
   @param[in,out] dict Słownik.
-  @return Słowo znajdujące się w słowniku.
+  @param[in] word Słowo, które należy usunąć ze słownika.
   */
+void dictionary_delete(struct dictionary *dict, const wchar_t* word);
 
-const wchar_t* dictionary_getword(struct dictionary *dict);
+
+/**
+  Sprawdza, czy dane słowo znajduje się w słowniku.
+  @param[in] dict Słownik.
+  @param[in] word Słowo, które należy usunąć ze słownika.
+  @return 1. gdy `word` jest w słowniku, 0 w p.p.
+  */
+int dictionary_find(const struct dictionary *dict, const wchar_t* word);
+
+
+/**
+  Zapisuje słownik.
+  @param[in] dict Słownik.
+  @param[in,out] stream Strumień, gdzie ma być zapisany słownik.
+  @return <0 jeśli operacja się nie powiedzie, 0 w p.p.
+  */
+int dictionary_save(const struct dictionary *dict, FILE* stream);
+
+
+/**
+  Inicjuje i wczytuje słownik.
+  Słownik ten należy zniszczyć za pomocą dictionary_done().
+  @param[in,out] stream Strumień, skąd ma być wczytany słownik.
+  @return Nowy słownik lub NULL, jeśli operacja się nie powiedzie.
+  */
+struct dictionary * dictionary_load(FILE* stream);
+
+
+/**
+  Sprawdza, czy dane słowo znajduje się w słowniku.
+  @param[in] dict Słownik.
+  @param[in] word Słowo, które należy usunąć ze słownika.
+  @param[in,out] list Lista, w której zostaną umieszczone podpowiedzi.
+  */
+void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
+                      struct word_list *list);
 
 #endif /* __DICTIONARY_H__ */
