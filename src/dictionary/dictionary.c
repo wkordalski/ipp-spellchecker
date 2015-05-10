@@ -97,7 +97,7 @@ void dictionary_insert(struct dictionary *dict, const wchar_t *word)
 
 void dictionary_delete(struct dictionary *dict, const wchar_t *word)
 {
-    /// @bug `struct word_list` nie obsługuję operacji usuwania.
+    /// @bug `struct word_list` nie obsługuje operacji usuwania.
 }
 
 int dictionary_find(const struct dictionary *dict, const wchar_t* word)
