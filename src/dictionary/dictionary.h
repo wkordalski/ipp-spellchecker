@@ -15,6 +15,7 @@
 #define __DICTIONARY_H__
 
 #include "word_list.h"
+#include <stdbool.h>
 #include <wchar.h>
 
 /**
@@ -60,9 +61,9 @@ int dictionary_delete(struct dictionary *dict, const wchar_t* word);
   Sprawdza, czy dane słowo znajduje się w słowniku.
   @param[in] dict Słownik.
   @param[in] word Słowo, które należy usunąć ze słownika.
-  @return 1. gdy `word` jest w słowniku, 0 w p.p.
+  @return Wartość logiczna czy `word` jest w słowniku.
   */
-int dictionary_find(const struct dictionary *dict, const wchar_t* word);
+bool dictionary_find(const struct dictionary *dict, const wchar_t* word);
 
 
 /**

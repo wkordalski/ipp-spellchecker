@@ -105,13 +105,13 @@ int dictionary_delete(struct dictionary *dict, const wchar_t *word)
     return 0;
 }
 
-int dictionary_find(const struct dictionary *dict, const wchar_t* word)
+bool dictionary_find(const struct dictionary *dict, const wchar_t* word)
 {
     const wchar_t * const * a = word_list_get(&dict->list);
     for (size_t i = 0; i < word_list_size(&dict->list); i++)
         if (!wcscmp(a[i], word))
-            return 1;
-    return 0;
+            return true;
+    return false;
 }
 
 int dictionary_save(const struct dictionary *dict, FILE* stream)
