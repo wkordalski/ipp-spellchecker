@@ -75,7 +75,7 @@ void skip_line()
     if (scanf("%*[^\n]\n") < 0) {
         if (ferror(stdin))
         {
-            fprintf(stderr, "Failed to read command\n");
+            fprintf(stderr, "Failed to read line\n");
             exit(1);
         }
     }

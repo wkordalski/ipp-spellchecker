@@ -21,7 +21,7 @@
   */
 struct dictionary
 {
-    struct word_list list;
+    struct word_list list; ///< Lista przechowująca słowa w słowniku.
 };
 
 /** @name Funkcje pomocnicze
