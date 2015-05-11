@@ -55,15 +55,15 @@ static const char *commands[] =
 };
 
 /** Maksymalna długość komendy.
-    Maksymalna długość komendy bez kończącego znaku '\0'
+    Maksymalna długość komendy bez kończącego znaku '\0'
   */
 #define MAX_COMMAND_LENGTH 15
 /** Maksymalna długość słowa.
-    Maksymalna długość słowa bez kończącego znaku '\0'
+    Maksymalna długość słowa bez kończącego znaku '\0'
   */
 #define MAX_WORD_LENGTH 63
 /** Maksymalna długość nazwy pliku.
-    Maksymalna długość nazwy pliku bez kończącego znaku '\0'
+    Maksymalna długość nazwy pliku bez kończącego znaku '\0'
   */
 #define MAX_FILE_LENGTH 511
 
@@ -214,7 +214,7 @@ static int file_command(struct dictionary **dict, enum Command c)
 
 
 
-/** Przetwarza jedną komendę.
+/** Przetwarza jedną komendę.
   @param[in,out] dict Słownik, na którym wykonywane są operacje
   @return 0, jeśli należy zakończyć proram, 1 w p.p.
  */
