@@ -5,7 +5,7 @@
 
 Uwaga: aktualna treść zadania znajduje się w [Moodle'u](https://moodle.mimuw.edu.pl/mod/assignment/view.php?id=15217).
 
-Duże zadanie zaliczeniowe polega na napisaniu spell checkera. Pierwszą część zadania składa się z biblioteki spell checkera oraz dwóch programów: dict-editor i dict-check korzystających z biblioteki. Program dict-editor został już napisany. **Twoim zadaniem jest napisanie biblioteki oraz programu dict-check.** W kolejnych etapach zadania będziemy bazować na rozwiązaniach tego etapu.
+Duże zadanie zaliczeniowe polega na napisaniu spell checkera. Pierwszą część zadania składa się z biblioteki spell checkera oraz dwóch programów: dict-editor i dict-check korzystających z biblioteki. Program `dict-editor` został już napisany. **Twoim zadaniem jest napisanie biblioteki oraz programu `dict-check`.** W kolejnych etapach zadania będziemy bazować na rozwiązaniach tego etapu.
 
 
 Biblioteka powinna pozwalać na
@@ -22,18 +22,18 @@ Częściowa implementacja biblioteki znajduje się w repozytorium. Każdy posiad
 
 Biblioteka powinna udostępniać funkcje:
 
- - insert(word)
+ - `insert(word)`
     dodaje słowo word do słownika
- - delete(word)
+ - `delete(word)`
     usuwa słowo word ze słownika
- - find(word) 
-    funkcja zwraca 1, jeśli słowo word znajduje się w słowniku lub 0 w przeciwnym przypadku
- - save(filename)
+ - `find(word)`
+    funkcja zwraca `true`, jeśli słowo word znajduje się w słowniku lub `false` w przeciwnym przypadku
+ - `save(filename)`
     zapisuje słownik w pliku o nazwie filename
- - load(filename)
+ - `load(filename)`
     wczytuje słownik z pliku o nazwie filename
- - hints(word)
-    zwraca podpowiedzi ze słownika, czyli słowa podobne do słowa word
+ - `hints(word)`
+    zwraca podpowiedzi ze słownika, czyli słowa podobne do słowa `word`
 
 Sygnatura wszystkich funkcji powinna być taka, jak w pliku dictionary.h.
 
@@ -50,30 +50,37 @@ Aby wygenerować podpowiedzi ze słownika dla słowa word stwórz wszystkie sło
 a następnie wybierz spośród nich te, które znajdują się w słowniku.
 ## Program dict-editor
 
-Program dict-editor, daje możliwość przetestowania biblioteki. Program wczytuje ze standardowego wejścia i wykonuje polecenia, które pojawiają się w kolejnych liniach. Po każdym poprawnym poleceniu program wypisuje na standardowe wyjście odpowiedni jednowierszowy komunikat. W przypadku niepoprawnego polecenia, program ignoruje je i wypisuje na standardowe wyjście wiersz
+Program `dict-editor`, daje możliwość przetestowania biblioteki. Program wczytuje ze standardowego wejścia i wykonuje polecenia, które pojawiają się w kolejnych liniach. Po każdym poprawnym poleceniu program wypisuje na standardowe wyjście odpowiedni jednowierszowy komunikat. W przypadku niepoprawnego polecenia, program ignoruje je i wypisuje na standardowe wyjście wiersz
 
     ignored
 
 Poprawne polecenie jest jednej z następujących postaci:
 
-  - insert word
-    wstawia słowo word do słownika i wypisuje komunikat inserted: word  lub ignored jeśli słowo już znajdowało się w słowniku
-  - delete word
-    usuwa słowo word ze słownika i wypisuje komunikat deleted: word lub ignored jeśli słowa nie było w słowniku
- -  find word
-    szuka słowa word w słownika i wypisuje komunikat found: word gdy znajdzie lub not found: word jeśli nie ma go w słowniku
-  - save filename
-    zapisuje słownik w pliku o nazwie filename i wypisuje komunikat dictionary saved in file filename
-  - load filename
-    wczytuje słownik z pliku o nazwie filename i wypisuje komunikat dictionary loaded from file filename
-  - hints word
-    wypisuje wiersz zawierający wszystkie podpowiedzi ze słownika do słowa word. Słowa powinny być pooddzielane pojedynczymi spacjami i posortowane alfabetycznie
-  - clear
-    usuwa wszystkie słowa ze słownika i wypisuje komunikat cleared 
+  - `insert word`
+  
+    wstawia słowo `word` do słownika i wypisuje komunikat `inserted: word`  lub `ignored` jeśli słowo już znajdowało się w słowniku
+  - `delete word`
+  
+    usuwa słowo `word` ze słownika i wypisuje komunikat `deleted: word` lub `ignored` jeśli słowa nie było w słowniku
+  - `find word`
+  
+    szuka słowa `word` w słownika i wypisuje komunikat `found: word` gdy znajdzie lub `not found: word` jeśli nie ma go w słowniku
+  - `save filename`
+  
+    zapisuje słownik w pliku o nazwie `filename` i wypisuje komunikat `dictionary saved in file filename`
+  - `load filename`
+  
+    wczytuje słownik z pliku o nazwie `filename` i wypisuje komunikat `dictionary loaded from file filename`
+  - `hints word`
+  
+    wypisuje wiersz zawierający wszystkie podpowiedzi ze słownika do słowa `word`. Słowa powinny być pooddzielane pojedynczymi spacjami i posortowane alfabetycznie
+  - `clear`
+  
+    usuwa wszystkie słowa ze słownika i wypisuje komunikat `cleared` 
 
-w każdym poprawnym poleceniu argument word jest słowem składającym się wyłącznie z małych lub wielkich liter alfabetu polskiego, natomiast filename jest słowem składającym się wyłącznie z małych liter alfabetu łacińskiego oraz ew. kropki. Poza tym, w każdym poleceniu dozwolone są dowolne białe znaki na początku linii, na końcu linii oraz pomiędzy nazwą polecenia, a argumentem. Wszelkie inne znaki w poleceniach są zabronione i w przypadku ich wystąpienia program dict-editor zignoruje takie polecenie i wypisze komunikat ignored.
+W każdym poprawnym poleceniu argument word jest słowem składającym się wyłącznie z małych lub wielkich liter alfabetu polskiego, natomiast `filename` jest słowem składającym się wyłącznie z małych liter alfabetu łacińskiego oraz ew. kropki. Poza tym, w każdym poleceniu dozwolone są dowolne białe znaki na początku linii, na końcu linii oraz pomiędzy nazwą polecenia, a argumentem. Wszelkie inne znaki w poleceniach są zabronione i w przypadku ich wystąpienia program `dict-editor` zignoruje takie polecenie i wypisze komunikat ignored.
 
-### Przykładowe uruchomienie programu dict-editor
+### Przykładowe uruchomienie programu `dict-editor`
 
 stdin | stdout
 ------|-------
@@ -109,7 +116,7 @@ gdzie W i Z to odpowiednio numer wiersza i numer znaku w tym wierszu wystąpieni
 
       ./dict-check -v slownik.txt
 
-slownik.txt
+#### slownik.txt
 
       litwa
       ojczyzna
@@ -160,18 +167,23 @@ slownik.txt
 
 W repozytorium, które pobierzesz będą znajdowały się następujące pliki:
 
- - dictionary/dictionary.h
+ - `dictionary/dictionary.h`
+ 
    plik nagłówkowy z deklaracjami funkcji eksportowanych przez bibliotekę spell checkera
- - dict-editor/dict-editor.c
+ - `dict-editor/dict-editor.c`
+ 
    plik z kodem źródłowym programu dict-editor 
 
 Powyższych plików nie wolno zmieniać. W Twoim rozwiązaniu powinny się dodatkowo znaleźć co najmniej pliki:
 
-  - dictionary/dictionary.c
+  - `dictionary/dictionary.c`
+  
     plik z implementacją biblioteki spell checkera 
-  - dict-check/dict-check.c
+  - `dict-check/dict-check.c`
+  
     plik z kodem źródłowym programu dict-check
-  - CMakeLists.txt
+  - `CMakeLists.txt`
+  
     Plik konfiguracyjny dla cmake.
 
 ## CMake i Makefile
