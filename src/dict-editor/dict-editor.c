@@ -112,7 +112,8 @@ int make_lowercase(wchar_t *word)
   @param[in] c Komenda.
   @return 0, jeśli należy zakończyć proram, 1 w p.p.
  */
-static int dict_command(struct dictionary **dict, enum Command c) {
+static int dict_command(struct dictionary **dict, enum Command c) 
+{
     wchar_t word[MAX_WORD_LENGTH+1];
     if (scanf("%" xstr(MAX_WORD_LENGTH) "ls", word) <= 0)
     {
@@ -169,7 +170,8 @@ static int dict_command(struct dictionary **dict, enum Command c) {
   @param[in] c Komenda.
   @return 0, jeśli należy zakończyć proram, 1 w p.p.
  */
-static int file_command(struct dictionary **dict, enum Command c) {
+static int file_command(struct dictionary **dict, enum Command c) 
+{
     char filename[MAX_FILE_LENGTH+1];
     if (scanf("%" xstr(MAX_FILE_LENGTH) "s", filename) <= 0)
     {
