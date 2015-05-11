@@ -63,7 +63,7 @@ int make_lowercase(wchar_t *word)
     return 1;
 }
 
-int try_process_command(struct dictionary *dict)
+int try_process_command(struct dictionary **dict)
 {
     char cmd[16];
     if (scanf("%15s", cmd) <= 0)
@@ -88,8 +88,8 @@ int try_process_command(struct dictionary *dict)
         return 0;
     else if (c == CLEAR)
     {
-        dictionary_done(dict);
-        dict = dictionary_new();
+        dictionary_done(*dict);
+        *dict = dictionary_new();
         printf("cleared\n");
     }
     else if (c < SAVE)
@@ -108,19 +108,19 @@ int try_process_command(struct dictionary *dict)
         switch (c)
         {
             case INSERT:
-                if (dictionary_insert(dict, word))
+                if (dictionary_insert(*dict, word))
                     printf("inserted: %ls\n", word);
                 else
                     return ignored();
                 break;
             case DELETE:
-                if (dictionary_delete(dict, word))
+                if (dictionary_delete(*dict, word))
                     printf("deleted: %ls\n", word);
                 else
                     return ignored();
                 break;
             case FIND:
-                if (dictionary_find(dict, word))
+                if (dictionary_find(*dict, word))
                     printf("found: %ls\n", word);
                 else
                     printf("not found: %ls\n", word);
@@ -128,7 +128,7 @@ int try_process_command(struct dictionary *dict)
             case HINTS:
             {
                 struct word_list list;
-                dictionary_hints(dict, word, &list);
+                dictionary_hints(*dict, word, &list);
                 const wchar_t * const *a = word_list_get(&list);
                 for (size_t i = 0; i < word_list_size(&list); ++i)
                 {
@@ -154,7 +154,7 @@ int try_process_command(struct dictionary *dict)
             case SAVE:
             {
                 FILE *f = fopen(filename, "w");
-                if (!f || dictionary_save(dict, f))
+                if (!f || dictionary_save(*dict, f))
                 {
                     fprintf(stderr, "Failed to save dictionary\n");
                     exit(1);
@@ -174,8 +174,8 @@ int try_process_command(struct dictionary *dict)
                 }
                 fclose(f);
                 printf("dictionary loaded from file %s\n", filename);
-                dictionary_done(dict);
-                dict = new_dict;
+                dictionary_done(*dict);
+                *dict = new_dict;
                 break;
             }
         }
@@ -192,7 +192,7 @@ int main(void)
 {
     setlocale(LC_ALL, "pl_PL.UTF-8");
     struct dictionary *dict = dictionary_new();
-    do {} while (try_process_command(dict));
+    do {} while (try_process_command(&dict));
     dictionary_done(dict);
     return 0;
 }
