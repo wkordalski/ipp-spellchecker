@@ -6,7 +6,7 @@
    
     @ingroup dictionary
     @author Jakub Pawlewicz <pan@mimuw.edu.pl>
-    @copyright Uniwerstet Warszawski
+    @copyright Uniwersytet Warszawski
     @date 2015-05-10
     @todo Rozbudować interfejs o obsługę plików.
  */
@@ -42,16 +42,18 @@ void dictionary_done(struct dictionary *dict);
   Wstawia podane słowo do słownika.
   @param[in,out] dict Słownik.
   @param[in] word Słowo, które należy wstawić do słownika.
+  @return 0 jeśli słowo było już w słowniku, 1 jeśli udało się wstawić.
   */
-void dictionary_insert(struct dictionary *dict, const wchar_t* word);
+int dictionary_insert(struct dictionary *dict, const wchar_t* word);
 
 
 /**
   Usuwa podane słowo ze słownika, jeśli istnieje.
   @param[in,out] dict Słownik.
   @param[in] word Słowo, które należy usunąć ze słownika.
+  @return 1 jeśli udało się usunąć, zero jeśli nie.
   */
-void dictionary_delete(struct dictionary *dict, const wchar_t* word);
+int dictionary_delete(struct dictionary *dict, const wchar_t* word);
 
 
 /**

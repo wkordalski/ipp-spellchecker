@@ -89,15 +89,18 @@ void dictionary_done(struct dictionary *dict)
     free(dict);
 }
 
-void dictionary_insert(struct dictionary *dict, const wchar_t *word)
+int dictionary_insert(struct dictionary *dict, const wchar_t *word)
 {
-    if (!dictionary_find(dict, word))
-        word_list_add(&dict->list, word);
+    if (dictionary_find(dict, word))
+        return 0;
+    word_list_add(&dict->list, word);
+    return 1;
 }
 
-void dictionary_delete(struct dictionary *dict, const wchar_t *word)
+int dictionary_delete(struct dictionary *dict, const wchar_t *word)
 {
     /// @bug `struct word_list` nie obsługuje operacji usuwania.
+    return 0;
 }
 
 int dictionary_find(const struct dictionary *dict, const wchar_t* word)
