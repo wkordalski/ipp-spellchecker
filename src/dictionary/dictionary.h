@@ -8,7 +8,6 @@
     @author Jakub Pawlewicz <pan@mimuw.edu.pl>
     @copyright Uniwersytet Warszawski
     @date 2015-05-10
-    @todo Rozbudować interfejs o obsługę plików.
  */
 
 #ifndef __DICTIONARY_H__
