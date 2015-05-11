@@ -1,5 +1,5 @@
 /** @file
-    Interfejs struktury przechowującej listę słów.
+    Interfejs listy słów.
 
     @ingroup dictionary
     @author Jakub Pawlewicz <pan@mimuw.edu.pl>

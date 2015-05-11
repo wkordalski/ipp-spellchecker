@@ -1,6 +1,6 @@
 /** @file
   Prosta implementacja słownika.
-  Słownik składa się tylko z jednego słowa.
+  Słownik przechowuje listę słów.
 
   @ingroup dictionary
   @author Jakub Pawlewicz <pan@mimuw.edu.pl>
@@ -18,7 +18,7 @@
 /**
   Struktura przechowująca słownik.
   Na razie prosta implementacja z użyciem listy słów.
-  */
+ */
 struct dictionary
 {
     struct word_list list; ///< Lista przechowująca słowa w słowniku.
@@ -26,11 +26,11 @@ struct dictionary
 
 /** @name Funkcje pomocnicze
   @{
-  */
+ */
 /**
   Czyszczenie pamięci słownika
   @param[in,out] dict słownik
-  */
+ */
 static void dictionary_free(struct dictionary *dict)
 {
     word_list_done(&dict->list);
@@ -50,7 +50,7 @@ static void skip_equal(const wchar_t **a, const wchar_t **b)
   @param[in] a Dłuższe słowo.
   @param[in] b Krótsze słowo.
   @return 1 jeśli się da zamienić `a` w `b` przez usunięcia znaku, 0 w p.p.
-  */
+ */
 static int can_transform_by_delete(const wchar_t *a, const wchar_t *b)
 {
     skip_equal(&a, &b);
@@ -64,7 +64,7 @@ static int can_transform_by_delete(const wchar_t *a, const wchar_t *b)
   @param[in] a Pierwsze słowo.
   @param[in] b Drugie słowo.
   @return 1 jeśli się da zamienić `a` w `b` przez zamianę znaku, 0 w p.p.
-  */
+ */
 static int can_transform_by_replace(const wchar_t *a, const wchar_t *b)
 {
     skip_equal(&a, &b);
@@ -74,7 +74,9 @@ static int can_transform_by_replace(const wchar_t *a, const wchar_t *b)
 }
 
 /**@}*/
-/** @name Elementy interfejsu */
+/** @name Elementy interfejsu 
+  @{
+ */
 struct dictionary * dictionary_new()
 {
     struct dictionary *dict =
@@ -136,7 +138,7 @@ struct dictionary * dictionary_load(FILE* stream)
 }
 
 void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
-                      struct word_list *list)
+        struct word_list *list)
 {
     word_list_init(list);
     size_t wlen = wcslen(word);

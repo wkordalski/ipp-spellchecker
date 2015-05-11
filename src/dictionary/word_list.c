@@ -1,6 +1,5 @@
 /** @file
-  Prosta implementacja słownika.
-  Słownik składa się tylko z jednego słowa.
+  Implementacja listy słów.
 
   @ingroup dictionary
   @author Jakub Pawlewicz <pan@mimuw.edu.pl>
@@ -10,7 +9,9 @@
 
 #include "word_list.h"
 
-/** @name Elementy interfejsu */
+/** @name Elementy interfejsu 
+   @{
+ */
 
 void word_list_init(struct word_list *list)
 {
