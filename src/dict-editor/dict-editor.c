@@ -12,6 +12,7 @@
   */
 
 #include "dictionary.h"
+#include <assert.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -159,6 +160,8 @@ static int dict_command(struct dictionary **dict, enum Command c)
                 printf("\n");
                 break;
             }
+        default:
+            assert(false);
     }
     skip_line();
     return 1;
@@ -207,6 +210,8 @@ static int file_command(struct dictionary **dict, enum Command c)
                 *dict = new_dict;
                 break;
             }
+        default:
+            assert(false);
     }
     skip_line();
     return 1;
