@@ -21,7 +21,7 @@
  */
 struct dictionary
 {
-    struct word_list list; ///< Lista przechowująca słowa w słowniku.
+    struct trie_node *root;      ///< Korzeń drzewa TRIE
 };
 
 /** @name Funkcje pomocnicze
@@ -33,7 +33,7 @@ struct dictionary
  */
 static void dictionary_free(struct dictionary *dict)
 {
-    word_list_done(&dict->list);
+    trie_done(&dict->list);
 }
 
 static void skip_equal(const wchar_t **a, const wchar_t **b)
