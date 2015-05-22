@@ -7,6 +7,8 @@ cmake_minimum_required (VERSION 2.6)
 # nazwa projektu i język źródeł
 project (Spellcheck C)    
 
+enable_testing ()
+
 # deklarujemy opcję DEBUG, domyślnie wyłączoną (opcję można włączyć przez argument -DDEBUG=ON)
 option (DEBUG OFF)
 
@@ -23,8 +25,6 @@ find_library (CMOCKA cmocka)
 # jeśli nie znaleźliśmy, to informujemy użytkownika. Jeśli zaś znaleźliśmy, to włączamy testowanie
 if (NOT CMOCKA)
     message (WARNING "Cmocka library not found. Plase install; see http://cmocka.org.")
-else (NOT CMOCKA)
-    enable_testing ()
 endif (NOT CMOCKA)
 
 # ustawiamy flagi kompilacji w wersji debug i release
