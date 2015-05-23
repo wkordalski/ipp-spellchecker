@@ -15,6 +15,7 @@
 
 #include "word_list.h"
 #include <stdbool.h>
+#include <stdio.h>
 #include <wchar.h>
 
 /**
