@@ -35,12 +35,10 @@ struct word_list
 {
     /// Liczba słów.
     size_t size;
-    /// Łączna liczba znaków.
-    size_t buffer_size;
+    /// Pojemność tablicy
+    size_t capacity;
     /// Tablica słów.
-    const wchar_t *array[WORD_LIST_MAX_WORDS];
-    /// Bufor, w którym pamiętane są słowa.
-    wchar_t buffer[WORD_LIST_SUM];
+    const wchar_t **array;
 };
 
 /**

@@ -9,6 +9,10 @@
 
 #include "word_list.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <wchar.h>
+
 /** @name Elementy interfejsu 
    @{
  */
@@ -16,24 +20,33 @@
 void word_list_init(struct word_list *list)
 {
     list->size = 0;
-    list->buffer_size = 0;
+    list->capacity = 16;
+    list->array = malloc(sizeof(wchar_t*)*(list->capacity));
 }
 
 void word_list_done(struct word_list *list)
 {
+    for(int i = 0; i < list->size; i++)
+        free(list->array[i]);
+    free(list->array);
 }
 
 int word_list_add(struct word_list *list, const wchar_t *word)
 {
-    if (list->size >= WORD_LIST_MAX_WORDS)
-        return 0;
-    size_t len = wcslen(word) + 1;
-    if (list->buffer_size + len > WORD_LIST_SUM)
-        return 0;
-    wchar_t *pos = list->buffer + list->buffer_size;
-    list->array[list->size++] = pos;
-    wcscpy(pos, word);
-    list->buffer_size += len;
+    if(list->size >= list->capacity)
+    {
+        list->capacity *= 2;
+        const wchar_t ** na = malloc(sizeof(wchar_t*)*(list->capacity));
+        if(na) return 0;
+        for(int i = 0; i < list->size; i++)
+            na[i] = list->array[i];
+        free(list->array);
+        list->array = na;
+    }
+    int len = wcslen(word) + 1;
+    wchar_t *copy = malloc(sizeof(wchar_t)*len);
+    memcpy(copy, word, sizeof(wchar_t)*len);
+    list->array[list->size++] = copy;
     return 1;
 }
 
