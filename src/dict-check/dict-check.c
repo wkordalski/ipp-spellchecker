@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
         printf("Could not parse dictionary file.\n");
         return 1;
     }
+    fclose(fdict);
     FILE *data = stdin;
     wint_t ch;
     int cap = 1024;
@@ -110,8 +111,8 @@ int main(int argc, char *argv[])
             if(len >= cap)
             {
                 cap *= 2;
-                wchar_t nw = malloc(sizeof(wchar_t)*cap);
-                wchar_t nl = malloc(sizeof(wchar_t)*cap);
+                wchar_t *nw = malloc(sizeof(wchar_t)*cap);
+                wchar_t *nl = malloc(sizeof(wchar_t)*cap);
                 memcpy(nw, word, sizeof(wchar_t)*len);
                 memcpy(nl, lowr, sizeof(wchar_t)*len);
                 free(word); free(lowr);
@@ -126,22 +127,25 @@ int main(int argc, char *argv[])
                 lowr[len] = 0;
                 if(!dictionary_find(dict, lowr))
                 {
-                    printf("#");
+                    printf("#%ls", word);
                     if(verbose)
                     {
                         fprintf(stderr, "%d,%d %ls:", row, ccl, word);
-                        word_list_init(&words);
+                        //word_list_init(&words); -- initialized in dictionary_hints
                         dictionary_hints(dict, lowr, &words);
                         const wchar_t * const * arr = word_list_get(&words);
                         for(int i = 0; i < word_list_size(&words); i++)
                         {
-                            printf(" %ls", arr[i]);
+                            fprintf(stderr, " %ls", arr[i]);
                         }
                         word_list_done(&words);
                         fprintf(stderr, "\n");
                     }
                 }
-                printf("%ls", word);
+                else
+                {
+                    printf("%ls", word);
+                }
                 len = 0;
             }
             if(ch == L'\n')
@@ -156,6 +160,8 @@ int main(int argc, char *argv[])
             printf("%lc", ch);
         }
     }
+    free(word);
+    free(lowr);
     dictionary_done(dict);
     return 0;
 }

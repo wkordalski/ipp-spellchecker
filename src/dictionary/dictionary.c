@@ -126,6 +126,8 @@ struct dictionary * dictionary_load(FILE* stream)
 void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
         struct word_list *list)
 {
+    word_list_init(list);
+    trie_hints(dict->root, word, list);
 }
 
 /**@}*/

@@ -1,4 +1,6 @@
 
+#include "word_list.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -20,3 +22,5 @@ int trie_delete(struct trie_node *root, const wchar_t *word);
 void trie_serialize(struct trie_node *root, FILE *file);
 
 struct trie_node * trie_deserialize(FILE *file);
+
+void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list);

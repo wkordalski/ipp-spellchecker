@@ -1,5 +1,6 @@
 #include "trie.h"
 #include "charmap.h"
+#include "word_list.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -10,6 +11,7 @@
 struct trie_node
 {
     wchar_t val;                ///< Wartość węzła
+    unsigned int cap : 32;      ///< Pojemność tablicy dzieci
     unsigned int cnt : 31;      ///< Ilość dzieci
     unsigned int leaf : 1;      ///< Czy tutaj kończy się słowo
     struct trie_node **chd;     ///< Lista dzieci
@@ -21,6 +23,7 @@ struct trie_node * trie_init()
     root->val = 0;
     root->cnt = 0;
     root->leaf = 0;
+    root->cap = 0;
     root->chd = NULL;
     return root;
 }
@@ -86,8 +89,9 @@ struct trie_node * trie_get_child_or_add_empty(struct trie_node *node, wchar_t v
     if(r == -1)
     {
         // Let's add an empty children list
-        node->chd = malloc(1 * sizeof(struct node *));
+        node->chd = malloc(4 * sizeof(struct node *));
         node->cnt = 1;
+        node->cap = 4;
         node->chd[0] = trie_init();
         node->chd[0]->val = value;
         return node->chd[0];
@@ -98,22 +102,32 @@ struct trie_node * trie_get_child_or_add_empty(struct trie_node *node, wchar_t v
     }
     else
     {
-        struct trie_node ** table = malloc((node->cnt+1) * sizeof(struct node *));\
-        struct trie_node ** source = node->chd;
-        for(int i = 0; i < r; i++)
+        if(node->cnt < node->cap)
         {
-            table[i] = source[i];
+            for(int i = node->cnt - 1; i >= r; i--)
+            {
+                node->chd[i + 1] = node->chd[i];
+            }
         }
-        table[r] = trie_init();
-        table[r]->val = value;
-        for(int i = r; i < node->cnt; i++)
+        else
         {
-            table[i + 1] = source[i];
+            struct trie_node ** table = malloc((node->cnt+1) * sizeof(struct node *));\
+            struct trie_node ** source = node->chd;
+            for(int i = 0; i < r; i++)
+            {
+                table[i] = source[i];
+            }
+            for(int i = r; i < node->cnt; i++)
+            {
+                table[i + 1] = source[i];
+            }
+            node->chd = table;
+            free(source);
         }
         node->cnt++;
-        node->chd = table;
-        free(source);
-        return table[r];
+        node->chd[r] = trie_init();
+        node->chd[r]->val = value;
+        return node->chd[r];
     }
 }
 
@@ -169,7 +183,9 @@ void trie_cleanup(struct trie_node *node, struct trie_node *parent)
     if(parent->cnt == 1)
     {
         parent->cnt = 0;
+        parent->cap = 0;
         free(parent->chd);
+        parent->chd = NULL;
     }
     else
     {
@@ -417,7 +433,7 @@ struct trie_node * trie_deserialize_formatA(FILE *file)
     tb_len = (tb_len << 8) | (fgetc(file)&0xFF);
     wchar_t *translator = malloc(sizeof(wchar_t)*lcount);
     {
-        char *trans_map = malloc(sizeof(char)*tb_len);
+        char *trans_map = malloc(sizeof(char)*(tb_len+1));
         char *tr_end = trans_map + tb_len;
         char *tr_cur = trans_map;
         if(fgets(trans_map, tb_len+1, file) == NULL) return NULL;
@@ -446,6 +462,7 @@ struct trie_node * trie_deserialize_formatA(FILE *file)
         }
         if(cmd >= lcount) break;
     }
+    free(translator);
     return root;
 }
 
@@ -459,4 +476,106 @@ struct trie_node * trie_deserialize(FILE *file)
         case 'A': return trie_deserialize_formatA(file);
         default: return NULL;
     }
+}
+
+void fix_size(wchar_t **created, int length, int *capacity)
+{
+    if(length >= *capacity)
+    {
+        (*capacity) *= 2;
+        wchar_t * newstr = malloc(sizeof(wchar_t)*(*capacity));
+        memcpy(newstr, *created, length);
+        free(*created);
+        *created = newstr;
+    }
+}
+
+void trie_hints_helper(struct trie_node *node, const wchar_t *word,
+                       wchar_t **created, int length, int *capacity,
+                       int points, struct word_list *list)
+{
+    // We can only add one letter, so...
+    fix_size(created, length + 1, capacity);
+    if(points <= 0)
+    {
+        // No change
+        if(word[0] == L'\0')
+        {
+            (*created)[length] = L'\0';
+            if(node->leaf) word_list_add(list, *created);
+        }
+        else
+        {
+            struct trie_node *child = trie_get_child(node, word[0]);
+            if(child != NULL)
+            {
+                (*created)[length] = word[0];
+                trie_hints_helper(child, word+1,created, length+1, capacity, 0, list);
+            }
+        }
+    }
+    else
+    {
+        if(word[0] == L'\0')
+        {
+            // No change
+            (*created)[length] = L'\0';
+            if(node->leaf) word_list_add(list, *created);
+            
+            // Add some letter
+            for(int i = 0; i < node->cnt; i++)
+            {
+                (*created)[length] = node->chd[i]->val;
+                trie_hints_helper(node->chd[i], word, created, length+1, capacity, points-1, list);
+            }
+        }
+        else
+        {
+            // No change
+            struct trie_node *child = trie_get_child(node, word[0]);
+            if(child != NULL)
+            {
+                (*created)[length] = word[0];
+                trie_hints_helper(child, word+1,created, length+1, capacity, points, list);
+            }
+            // Miss the current letter
+            trie_hints_helper(node, word+1, created, length, capacity, points-1, list);
+            // Add some letter or swap current with some letter
+            for(int i = 0; i < node->cnt; i++)
+            {
+                (*created)[length] = node->chd[i]->val;
+                trie_hints_helper(node->chd[i], word, created, length+1, capacity, points-1, list);
+                if(node->chd[i]->val != word[0])
+                {
+                    // But must be some change
+                    trie_hints_helper(node->chd[i], word+1, created, length+1, capacity, points-1, list);
+                }
+            }
+        }
+    }
+}
+
+int locale_sorter(const void *a, const void *b)
+{
+    return wcscoll((const wchar_t*)a, (const wchar_t*)b);
+}
+
+void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list)
+{
+    struct word_list mylist;
+    word_list_init(&mylist);
+    int capacity = 1024;
+    wchar_t *buff = malloc(sizeof(wchar_t)*capacity);
+    trie_hints_helper(root, word, &buff, 0, &capacity, 1, &mylist);
+    free(buff);
+    qsort(mylist.array, mylist.size, sizeof(wchar_t*), locale_sorter);
+    word_list_add(list, mylist.array[0]);
+    for(int i = 1; i < word_list_size(&mylist); i++)
+    {
+        if(wcscmp(mylist.array[i-1], mylist.array[i]) != 0)
+        {
+            word_list_add(list, mylist.array[1]);
+        }
+    }
+    word_list_done(&mylist);
 }
