@@ -60,7 +60,7 @@ int char_map_put(struct char_map *map, wchar_t key, char value)
 {
     int bucket = key % CHAR_MAP_SIZE;
     int place = char_map_get_position_in_bucket(map->keys[bucket], key, 0, map->counts[bucket]);
-    if(map->keys[bucket][place] == key) return 0;
+    if(map->counts[bucket] > place && map->keys[bucket][place] == key) return 0;
     assert(map->counts[bucket] < CHAR_MAP_SIZE - 1);
     for(int i = map->counts[bucket] - 1; i >= place; i--)
     {
