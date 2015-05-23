@@ -8,7 +8,6 @@
     @author Jakub Pawlewicz <pan@mimuw.edu.pl>
     @copyright Uniwersytet Warszawski
     @date 2015-05-10
-    @todo Rozbudować interfejs o obsługę plików.
  */
 
 #ifndef __DICTIONARY_H__
@@ -16,6 +15,7 @@
 
 #include "word_list.h"
 #include <stdbool.h>
+#include <stdio.h>
 #include <wchar.h>
 
 /**
@@ -60,7 +60,7 @@ int dictionary_delete(struct dictionary *dict, const wchar_t* word);
 /**
   Sprawdza, czy dane słowo znajduje się w słowniku.
   @param[in] dict Słownik.
-  @param[in] word Słowo, które należy usunąć ze słownika.
+  @param[in] word Szukane słowo.
   @return Wartość logiczna czy `word` jest w słowniku.
   */
 bool dictionary_find(const struct dictionary *dict, const wchar_t* word);
@@ -87,7 +87,7 @@ struct dictionary * dictionary_load(FILE* stream);
 /**
   Sprawdza, czy dane słowo znajduje się w słowniku.
   @param[in] dict Słownik.
-  @param[in] word Słowo, które należy usunąć ze słownika.
+  @param[in] word Szukane słowo.
   @param[in,out] list Lista, w której zostaną umieszczone podpowiedzi.
   */
 void dictionary_hints(const struct dictionary *dict, const wchar_t* word,

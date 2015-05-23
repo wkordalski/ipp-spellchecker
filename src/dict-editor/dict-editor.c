@@ -12,6 +12,7 @@
   */
 
 #include "dictionary.h"
+#include <assert.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,15 +56,15 @@ static const char *commands[] =
 };
 
 /** Maksymalna długość komendy.
-    Maksymalna długość komendy bez kończącego znaku '\0'
+    Maksymalna długość komendy bez kończącego znaku '\0'
   */
 #define MAX_COMMAND_LENGTH 15
 /** Maksymalna długość słowa.
-    Maksymalna długość słowa bez kończącego znaku '\0'
+    Maksymalna długość słowa bez kończącego znaku '\0'
   */
 #define MAX_WORD_LENGTH 63
 /** Maksymalna długość nazwy pliku.
-    Maksymalna długość nazwy pliku bez kończącego znaku '\0'
+    Maksymalna długość nazwy pliku bez kończącego znaku '\0'
   */
 #define MAX_FILE_LENGTH 511
 
@@ -157,8 +158,11 @@ static int dict_command(struct dictionary **dict, enum Command c)
                     printf("%ls", a[i]);
                 }
                 printf("\n");
+                word_list_done(&list);
                 break;
             }
+        default:
+            assert(false);
     }
     skip_line();
     return 1;
@@ -207,6 +211,8 @@ static int file_command(struct dictionary **dict, enum Command c)
                 *dict = new_dict;
                 break;
             }
+        default:
+            assert(false);
     }
     skip_line();
     return 1;
@@ -214,7 +220,7 @@ static int file_command(struct dictionary **dict, enum Command c)
 
 
 
-/** Przetwarza jedną komendę.
+/** Przetwarza jedną komendę.
   @param[in,out] dict Słownik, na którym wykonywane są operacje
   @return 0, jeśli należy zakończyć proram, 1 w p.p.
  */
