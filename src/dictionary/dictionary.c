@@ -10,6 +10,7 @@
  */
 
 #include "dictionary.h"
+#include "trie.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -33,7 +34,7 @@ struct dictionary
  */
 static void dictionary_free(struct dictionary *dict)
 {
-    trie_done(&dict->list);
+    trie_done(dict->root);
 }
 
 static void skip_equal(const wchar_t **a, const wchar_t **b)
@@ -81,7 +82,7 @@ struct dictionary * dictionary_new()
 {
     struct dictionary *dict =
         (struct dictionary *) malloc(sizeof(struct dictionary));
-    word_list_init(&dict->list);
+    dict->root = trie_init();
     return dict;
 }
 
@@ -93,75 +94,38 @@ void dictionary_done(struct dictionary *dict)
 
 int dictionary_insert(struct dictionary *dict, const wchar_t *word)
 {
-    if (dictionary_find(dict, word))
-        return 0;
-    word_list_add(&dict->list, word);
-    return 1;
+    return trie_insert(dict->root, word);
 }
 
 int dictionary_delete(struct dictionary *dict, const wchar_t *word)
 {
-    /// @bug `struct word_list` nie obsługuje operacji usuwania.
-    return 0;
+    return trie_delete(dict->root, word);
 }
 
 bool dictionary_find(const struct dictionary *dict, const wchar_t* word)
 {
-    const wchar_t * const * a = word_list_get(&dict->list);
-    for (size_t i = 0; i < word_list_size(&dict->list); i++)
-        if (!wcscmp(a[i], word))
-            return true;
-    return false;
+    return trie_find(dict->root, word);
 }
 
 int dictionary_save(const struct dictionary *dict, FILE* stream)
 {
-    const wchar_t * const * a = word_list_get(&dict->list);
-    for (size_t i = 0; i < word_list_size(&dict->list); i++)
-        if (fprintf(stream, "%ls\n", a[i]) < 0)
-            return -1;
+    trie_serialize(dict->root, stream);
     return 0;
 }
 
 struct dictionary * dictionary_load(FILE* stream)
 {
-    struct dictionary *dict = dictionary_new();
-    wchar_t buf[32];
-    while (fscanf(stream, "%32ls", buf) != EOF)
-        dictionary_insert(dict, buf);
-    if (ferror(stream))
-    {
-        dictionary_done(dict);
-        dict = NULL;
-    }
+    struct trie_node * root = trie_deserialize(stream);
+    if(root == NULL) return NULL;
+    struct dictionary * dict = dictionary_new();
+    trie_done(dict->root);
+    dict->root = root;
     return dict;
 }
 
 void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
         struct word_list *list)
 {
-    word_list_init(list);
-    size_t wlen = wcslen(word);
-    const wchar_t * const * a = word_list_get(&dict->list);
-    for (size_t i = 0; i < word_list_size(&dict->list); i++)
-    {
-        size_t len = wcslen(a[i]);
-        if (len == wlen - 1)
-        {
-            if (can_transform_by_delete(word, a[i]))
-                word_list_add(list, a[i]);
-        }
-        else if (len == wlen)
-        {
-            if (can_transform_by_replace(word, a[i]))
-                word_list_add(list, a[i]);
-        }
-        else if (len == wlen + 1)
-        {
-            if (can_transform_by_delete(a[i], word))
-                word_list_add(list, a[i]);
-        }
-    }
 }
 
 /**@}*/
