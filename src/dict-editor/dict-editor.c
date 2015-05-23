@@ -158,6 +158,7 @@ static int dict_command(struct dictionary **dict, enum Command c)
                     printf("%ls", a[i]);
                 }
                 printf("\n");
+                word_list_done(&list);
                 break;
             }
         default:
