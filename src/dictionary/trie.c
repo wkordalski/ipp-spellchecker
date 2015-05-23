@@ -318,7 +318,7 @@ void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_
             {
                 tb_cap *= 2;
                 char *tb2 = malloc(sizeof(char)*tb_cap);
-                memcpy(tb2, trans_buffer, tb_len);
+                memcpy(tb2, trans_buffer, tb_len*sizeof(char));
                 free(trans_buffer);
                 trans_buffer = tb2;
             }
