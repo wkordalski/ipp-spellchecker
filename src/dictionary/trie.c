@@ -574,7 +574,7 @@ void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *l
     {
         if(wcscmp(mylist.array[i-1], mylist.array[i]) != 0)
         {
-            word_list_add(list, mylist.array[1]);
+            word_list_add(list, mylist.array[i]);
         }
     }
     word_list_done(&mylist);

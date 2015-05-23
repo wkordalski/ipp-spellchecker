@@ -16,25 +16,6 @@
 #include <string.h>
 #include <wctype.h>
 
-/** Makro służące do otrzymania stałej w formie napisu */
-#define str(x)          # x
-/** Makro służące do otrzymania stałej w formie napisu */
-#define xstr(x)         str(x)
-
-
-/** Zamienia słowo na złożone z małych liter.
-  @param[in,out] word Modyfikowane słowo.
-  @return 0, jeśli słowo nie jest złożone z samych liter, 1 w p.p.
- */
-int make_lowercase(wchar_t *word)
-{
-    for (wchar_t *w = word; *w; ++w)
-        if (!iswalpha(*w))
-            return 0;
-        else
-            *w = towlower(*w);
-    return 1;
-}
 
 enum ProgramOptionsParsingState
 {
