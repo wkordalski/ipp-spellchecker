@@ -111,7 +111,8 @@ struct trie_node * trie_get_child_or_add_empty(struct trie_node *node, wchar_t v
         }
         else
         {
-            struct trie_node ** table = malloc((node->cnt+1) * sizeof(struct node *));\
+            node->cap *= 2;
+            struct trie_node ** table = malloc((node->cap) * sizeof(struct node *));
             struct trie_node ** source = node->chd;
             for(int i = 0; i < r; i++)
             {
@@ -178,7 +179,7 @@ int trie_find(struct trie_node* root, const wchar_t* word)
 void trie_cleanup(struct trie_node *node, struct trie_node *parent)
 {
     if(node->leaf != 0 || node->cnt > 0) return;
-    int r = trie_get_child_index(parent, node->val, 0, node->cnt);
+    int r = trie_get_child_index(parent, node->val, 0, parent->cnt);
     assert(r != -1 && r < parent->cnt && parent->chd[r] == node);
     if(parent->cnt == 1)
     {
@@ -189,19 +190,33 @@ void trie_cleanup(struct trie_node *node, struct trie_node *parent)
     }
     else
     {
-        struct trie_node **table = malloc((parent->cnt - 1)*sizeof(struct trie_node*));
+        struct trie_node **table;
         struct trie_node **source = parent->chd;
-        for(int i = 0; i < r; i++)
+        if(parent->cnt * 3 < parent->cap && parent->cap > 4)
         {
-            table[i] = source[i];
+            parent->cap /= 2;
+            table = malloc((parent->cap)*sizeof(struct trie_node*));
+            for(int i = 0; i < r; i++)
+            {
+                table[i] = source[i];
+            }
+            parent->chd = table;
+            for(int i = parent->cnt - 1; i > r; i--)
+            {
+                table[i-1] = source[i];
+            }
+            parent->cnt--;
+            free(source);
         }
-        for(int i = r + 1; i < parent->cnt; i++)
+        else
         {
-            table[i-1] = source[i];
+            table = parent->chd;
+            for(int i = parent->cnt - 1; i > r; i--)
+            {
+                table[i-1] = source[i];
+            }
+            parent->cnt--;
         }
-        parent->cnt--;
-        parent->chd = table;
-        free(source);
     }
     free(node);
 }
@@ -557,7 +572,7 @@ void trie_hints_helper(struct trie_node *node, const wchar_t *word,
 
 int locale_sorter(const void *a, const void *b)
 {
-    return wcscoll((const wchar_t*)a, (const wchar_t*)b);
+    return wcscoll(*(const wchar_t**)a, *(const wchar_t**)b);
 }
 
 void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list)

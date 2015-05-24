@@ -37,43 +37,6 @@ static void dictionary_free(struct dictionary *dict)
     trie_done(dict->root);
 }
 
-static void skip_equal(const wchar_t **a, const wchar_t **b)
-{
-    while (**a == **b && **a != L'\0')
-    {
-        (*a)++;
-        (*b)++;
-    }
-}
-
-/**
-  Zwraca czy słowo `a` można zamienić w `b` przez usunięcie znaku.
-  @param[in] a Dłuższe słowo.
-  @param[in] b Krótsze słowo.
-  @return 1 jeśli się da zamienić `a` w `b` przez usunięcia znaku, 0 w p.p.
- */
-static int can_transform_by_delete(const wchar_t *a, const wchar_t *b)
-{
-    skip_equal(&a, &b);
-    a++;
-    skip_equal(&a, &b);
-    return *a == L'\0' && *b == L'\0';
-}
-
-/**
-  Zwraca czy słowo `a` można zamienić w `b` przez zamianę znaku.
-  @param[in] a Pierwsze słowo.
-  @param[in] b Drugie słowo.
-  @return 1 jeśli się da zamienić `a` w `b` przez zamianę znaku, 0 w p.p.
- */
-static int can_transform_by_replace(const wchar_t *a, const wchar_t *b)
-{
-    skip_equal(&a, &b);
-    a++; b++;
-    skip_equal(&a, &b);
-    return *a == L'\0' && *b == L'\0';
-}
-
 /**@}*/
 /** @name Elementy interfejsu 
   @{

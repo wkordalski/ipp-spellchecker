@@ -27,7 +27,7 @@ void word_list_init(struct word_list *list)
 void word_list_done(struct word_list *list)
 {
     for(int i = 0; i < list->size; i++)
-        free(list->array[i]);
+        free((void*)(list->array[i]));
     free(list->array);
 }
 
@@ -37,7 +37,7 @@ int word_list_add(struct word_list *list, const wchar_t *word)
     {
         list->capacity *= 2;
         const wchar_t ** na = malloc(sizeof(wchar_t*)*(list->capacity));
-        if(na) return 0;
+        if(na == NULL) return 0;
         for(int i = 0; i < list->size; i++)
             na[i] = list->array[i];
         free(list->array);
