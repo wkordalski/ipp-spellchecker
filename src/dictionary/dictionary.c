@@ -1,12 +1,13 @@
 /** @file
   Prosta implementacja słownika.
-  Słownik przechowuje listę słów.
-
+  Słownik przechowuje drzewo TRIE.
+  
   @ingroup dictionary
   @author Jakub Pawlewicz <pan@mimuw.edu.pl>
+          Wojciech Kordalski <wojtek.kordalski@gmail.com>
+          
   @copyright Uniwerstet Warszawski
-  @date 2015-05-11
-  @todo Napisać efektywną implementację.
+  @date 2015-05-23
  */
 
 #include "dictionary.h"
@@ -18,26 +19,14 @@
 
 /**
   Struktura przechowująca słownik.
-  Na razie prosta implementacja z użyciem listy słów.
+  
+  Słowa są przechowywane w drzewie TRIE.
  */
 struct dictionary
 {
     struct trie_node *root;      ///< Korzeń drzewa TRIE
 };
 
-/** @name Funkcje pomocnicze
-  @{
- */
-/**
-  Czyszczenie pamięci słownika
-  @param[in,out] dict słownik
- */
-static void dictionary_free(struct dictionary *dict)
-{
-    trie_done(dict->root);
-}
-
-/**@}*/
 /** @name Elementy interfejsu 
   @{
  */
@@ -51,7 +40,7 @@ struct dictionary * dictionary_new()
 
 void dictionary_done(struct dictionary *dict)
 {
-    dictionary_free(dict);
+    trie_done(dict->root);
     free(dict);
 }
 

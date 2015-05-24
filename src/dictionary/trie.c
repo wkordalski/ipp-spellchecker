@@ -1,3 +1,13 @@
+/** @file
+  Implementacja drzewa TRIE.
+
+  @ingroup dictionary
+  @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
+          
+  @copyright Uniwerstet Warszawski
+  @date 2015-05-24
+ */
+
 #include "trie.h"
 #include "charmap.h"
 #include "word_list.h"
@@ -8,6 +18,9 @@
 #include <string.h>
 #include <wchar.h>
 
+/**
+ * Reprezentuje węzeł drzewa TRIE.
+ */
 struct trie_node
 {
     wchar_t val;                ///< Wartość węzła
@@ -17,32 +30,23 @@ struct trie_node
     struct trie_node **chd;     ///< Lista dzieci
 };
 
-struct trie_node * trie_init()
-{
-    struct trie_node *root = malloc(sizeof(struct trie_node));
-    root->val = 0;
-    root->cnt = 0;
-    root->leaf = 0;
-    root->cap = 0;
-    root->chd = NULL;
-    return root;
-}
-
-void trie_done(struct trie_node *root)
-{
-    trie_clear(root);
-    free(root);
-}
+/** @name Funkcje pomocnicze
+ * @{
+ */
 
 
 /**
- * Znajduje gdzie powinien być node o wartości value.
+ * Znajduje gdzie powinien być node o wartości value wśród dzieci pewnego węzła.
  * 
- * @return -1 jeśli trzeba utworzyć listę dzieci
- * lub indeks na którym powinien być dany element
- * (trzeba sprawdzić czy rzeczywiście tam jest)
+ * @param[in] node Węzeł, którego dzieci powinny zostać przeszukane.
+ * @param[in] value Wartość węzła do znalezienia.
+ * @param[in] begin Początek przedziału, w którym może się znaleźć szukany węzeł.
+ * @param[in] end Koniec przedziału, w którym może się znaleźć szukany węzeł.
+ * 
+ * @return -1 jeśli trzeba utworzyć listę dzieci lub indeks, na którym powinien
+ * być dany element (trzeba sprawdzić czy rzeczywiście tam jest)
  */
-int trie_get_child_index(struct trie_node *node, wchar_t value, int begin, int end)
+static int trie_get_child_index(struct trie_node *node, wchar_t value, int begin, int end)
 {
     assert(node->chd != NULL || (node->chd == NULL && node->cnt == 0));
     if(node->chd == NULL) return -1;
@@ -73,7 +77,15 @@ int trie_get_child_index(struct trie_node *node, wchar_t value, int begin, int e
     }
 }
 
-struct trie_node * trie_get_child(struct trie_node *node, wchar_t value)
+/**
+ * Zwraca dziecko węzła o podanej wartości.
+ * 
+ * @param[in] node Węzeł, którego dzieci przeszukać.
+ * @param[in] value Wartość, którą znaleźć.
+ * 
+ * @return Wskaźnik na znaleziony węzeł lub NULL jeśli nie znaleziono.
+ */
+static struct trie_node * trie_get_child(struct trie_node *node, wchar_t value)
 {
     assert(node != NULL);
     int r = trie_get_child_index(node, value, 0, node->cnt);
@@ -83,7 +95,15 @@ struct trie_node * trie_get_child(struct trie_node *node, wchar_t value)
     return node->chd[r];
 }
 
-struct trie_node * trie_get_child_or_add_empty(struct trie_node *node, wchar_t value)
+/**
+ * Zwraca dziecko węzła o podanej wartości lub tworzy takowe dziecko.
+ * 
+ * @param[in,out] node Węzeł, którego dzieci przeszukać.
+ * @param[in] value Wartość którą znaleźć.
+ * 
+ * @return Wskaźnik na znaleziony lub utworzony węzeł.
+ */
+static struct trie_node * trie_get_child_or_add_empty(struct trie_node *node, wchar_t value)
 {
     int r = trie_get_child_index(node, value, 0, node->cnt);
     if(r == -1)
@@ -132,51 +152,14 @@ struct trie_node * trie_get_child_or_add_empty(struct trie_node *node, wchar_t v
     }
 }
 
-void trie_clear(struct trie_node *node)
-{
-    if(node->chd == NULL) return;
-    for(int i = 0; i < node->cnt; i++)
-    {
-        trie_clear(node->chd[i]);
-        free(node->chd[i]);
-    }
-    free(node->chd);
-}
-
 
 /**
- * @returns 1 jeśli słowo zostało dodane, 0 jeśli istniało wcześniej
+ * Gdy można usuwa node i aktualizuje parenta.
+ * 
+ * @param[in] node Węzeł, który ewentualnie usunąć.
+ * @param[in,out] parent Rodzic node'a.
  */
-int trie_insert(struct trie_node* root, const wchar_t* word)
-{
-    assert(word[0] != 0);
-    struct trie_node *child = trie_get_child_or_add_empty(root, word[0]);
-    if(word[1] == 0)
-    {
-        // Trzeba sprawdzić, czy słowo przypadkiem już nie istnieje!
-        if(child->leaf) return 0;
-        child->leaf = 1;
-        return 1;
-    }
-    else
-    {
-        // Chamsko dodajemy
-        return trie_insert(child, word + 1);
-    }
-}
-
-/**
- * @returns 1 jeśli słowo istnieje, 0 jeśli nie
- */
-int trie_find(struct trie_node* root, const wchar_t* word)
-{
-    if(word[0] == 0) return root->leaf;
-    struct trie_node *child = trie_get_child(root, word[0]);
-    if(child == NULL) return 0;
-    return trie_find(child, word + 1);
-}
-
-void trie_cleanup(struct trie_node *node, struct trie_node *parent)
+static void trie_cleanup(struct trie_node *node, struct trie_node *parent)
 {
     if(node->leaf != 0 || node->cnt > 0) return;
     int r = trie_get_child_index(parent, node->val, 0, parent->cnt);
@@ -222,9 +205,15 @@ void trie_cleanup(struct trie_node *node, struct trie_node *parent)
 }
 
 /**
- * @return 1 jeśli słowo zostało usunięte, 0 jeśli nie
+ * Funkcja usuwająca podsłowo z poddrzewa.
+ * 
+ * @param[in,out] node Poddrzewo, z którego usunąć podsłowo.
+ * @param[in,out] parent Rodzic node'a.
+ * @param[in] word Podsłowo do usunięcia.
+ * 
+ * @return Zwraca 1 jeśli podsłowo zostało usunięte, 0 jeśli nie istniało.
  */
-int trie_delete_helper(struct trie_node *node, struct trie_node *parent, const wchar_t *word)
+static int trie_delete_helper(struct trie_node *node, struct trie_node *parent, const wchar_t *word)
 {
     if(word[0] == 0)
     {
@@ -253,44 +242,46 @@ int trie_delete_helper(struct trie_node *node, struct trie_node *parent, const w
 }
 
 /**
- * @return 1 jeśli słowo zostało usunięte, 0 jeśli nie
+ * Wypełnia char-mapę istniejącymi literami w słowniku.
+ * 
+ * Wypełnianie zostaje przerwane, gdy char-mapa zostanie wypełniona w całości.
+ * Każdemu znakowi zostaje przypisana wartość 8-bitowa.
+ * Dodatkowo zostaje obliczona długość najdłuższego słowa.
+ * 
+ * @param[in] root Drzewo, którego litery wrzucić do char-mapy.
+ * @param[in,out] map Char-mapa do wypełnienia.
+ * @param[in,out] trans Przyporządkowanie wartości 8-bitowej do znaku ze słownika.
+ * @param[in,out] symbol Kolejna wartość 8-bitowa do przypisania.
+ * @param[in] length Głębokość w drzewie, na której aktualnie jesteśmy.
+ * @param[in,out] maxlength Największa do tej pory uzyskana głębokość.
  */
-int trie_delete(struct trie_node* root, const wchar_t* word)
-{
-    assert(word[0] != 0);
-    struct trie_node *child = trie_get_child(root, word[0]);
-    if(child == NULL)
-    {
-      return 0;
-    }
-    else
-    {
-      return trie_delete_helper(child, root, word + 1);
-    }
-}
-
-
-/**
- * @returns 0 if overflow of map encountred, 1 otherwise
- */
-int trie_fill_charmap(struct trie_node *root, struct char_map *map, wchar_t **trans, char *symbol, int length, int *maxlength)
+static void trie_fill_charmap(struct trie_node *root, struct char_map *map, wchar_t **trans, char *symbol, int length, int *maxlength)
 {
     if(length > *maxlength) *maxlength = length;
-    if(char_map_count(map) >= char_map_capacity()) return 0;
-    if(char_map_put(map, root->val, *symbol))
+    if(char_map_size(map) < char_map_capacity())
     {
-        (*symbol)++;
-        (**trans) = root->val;
-        (*trans)++;
+        if(char_map_put(map, root->val, *symbol))
+        {
+            (*symbol)++;
+            (**trans) = root->val;
+            (*trans)++;
+        }
     }
     for(int i = 0; i < root->cnt; i++)
     {
-        if(!trie_fill_charmap(root->chd[i], map, trans, symbol, length + 1, maxlength)) return 0;       
+        trie_fill_charmap(root->chd[i], map, trans, symbol, length + 1, maxlength);       
     }
-    return 1;
 }
 
-void trie_serialize_formatA_ender(int res, int count, int loglen, FILE *file)
+/**
+ * Wypisuje do pliku instrukcje odpowiadające za skakanie w górę drzewa.
+ * 
+ * @param[in] res Ilość skoków w górę drzewa.
+ * @param[in] count Ilość liter w alfabecie.
+ * @param[in] loglen Sufit z logarytmu z maksymalnej długości słowa.
+ * @param[in] file Plik, do którego zapisać wygenerowane instrukcje.
+ */
+static void trie_serialize_formatA_ender(int res, int count, int loglen, FILE *file)
 {
     if(res < 256 - (count+loglen))
     {
@@ -306,40 +297,64 @@ void trie_serialize_formatA_ender(int res, int count, int loglen, FILE *file)
 }
 
 /**
- * @returns number of hops to do up
+ * Wypisuje do pliku instrukcje odpowiadające za reprezentację danego poddrzewa.
+ * 
+ * @param[in] node Poddrzewo, które mamy reprezentować.
+ * @param[in] map Char-mapa przypisująca znakowi wartość 8-bitową.
+ * @param[in] count Ilość liter w alfabecie.
+ * @param[in] loglen Sufit z logarytmu z maksymalnej długości słowa.
+ * @param[in] file Plik, do którego zapisać wygenerowane instrukcje.
+ * 
+ * @return Ilość skoków w górę, którą należy jeszcze zapisać do pliku.
  */
-int trie_serialize_formatA_helper(struct trie_node *root, struct char_map *map, int count, int loglen, FILE *file)
+static int trie_serialize_formatA_helper(struct trie_node *node, struct char_map *map, int count, int loglen, FILE *file)
 {
     char coded = 0;
-    assert(char_map_get(map, root->val, &coded));
+    assert(char_map_get(map, node->val, &coded));
     fputc(coded, file);
-    if(root->cnt == 0) return 1;
-    else if(root->leaf) fputc((char)count, file);
-    for(int i = 0; i + 1 < root->cnt; i++)
+    if(node->cnt == 0) return 1;
+    else if(node->leaf) fputc((char)count, file);
+    for(int i = 0; i + 1 < node->cnt; i++)
     {
-        int res = trie_serialize_formatA_helper(root->chd[i], map, count, loglen, file);
+        int res = trie_serialize_formatA_helper(node->chd[i], map, count, loglen, file);
         // write way up...
         trie_serialize_formatA_ender(res, count, loglen, file);
     }
-    int res = trie_serialize_formatA_helper(root->chd[root->cnt-1], map, count, loglen, file);
+    int res = trie_serialize_formatA_helper(node->chd[node->cnt-1], map, count, loglen, file);
     return res + 1;
 }
 
-void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int length, FILE *file)
+
+/**
+ * Wypisuje do pliku instrukcje odpowiadające za reprezentację danego drzewa.
+ * 
+ * Drzewo zostanie zapisane w formacie "dictA".
+ * 
+ * @param[in] root Drzewo, które mamy reprezentować.
+ * @param[in] map Char-mapa przypisująca znakowi wartość 8-bitową.
+ * @param[in] trans Przypisanie 8-bitowej wartości znakowi.
+ * @param[in] length Maksymalna długość słowa w słowniku.
+ * @param[in] file Plik, do którego zapisać wygenerowane instrukcje.
+ */
+static void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int length, FILE *file)
 {
+    // Nagłówek pliku
     fputs("dictA", file);
     int loglen = 0;
     while((length+1) > (1<<loglen)) loglen++;
-    int count = char_map_count(map);
+    int count = char_map_size(map);
     fputc((char)count, file);
     fputc((char)loglen, file);
+    
+    
+    // Wygenerowanie danych przypisujących liczbę 8-bitową znakowi.
     char * trans_buffer = malloc(sizeof(char)*256*16);
     int tb_len = 0;
     int tb_cap = 256*16;
     char mb[MB_CUR_MAX];
     mbstate_t state;
     memset(&state, 0, sizeof(state));
-    for(int i = 0; i < char_map_count(map); i++)
+    for(int i = 0; i < char_map_size(map); i++)
     {
         int len = wcrtomb(mb, trans[i], &state);
         for(int j = 0; j < len; j++)
@@ -355,61 +370,56 @@ void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_
             }
         }
     }
+    // Długość danych przypisujących wartość 8-bitową znakowi
     fputc((char)((tb_len>>24)&0xFF), file);
     fputc((char)((tb_len>>16)&0xFF), file);
     fputc((char)((tb_len>>8)&0xFF), file);
     fputc((char)(tb_len&0xFF), file);
     
+    // Dane przypisujące wartość 8-bitową znakowi
     for(int i = 0; i < tb_len; i++)
     {
         fputc(trans_buffer[i], file);
     }
     free(trans_buffer);
     
+    // Znaczenie znaku w zapisie drzewa...
     // 0 .. (count-1) = characters
     // count = end of word
     // (count+1) .. (count+loglen+1) = end of word and go up
     // (count+loglen+2) .. = other end of word and go up
+    
+    // Zapisanie drzewa
     for(int i = 0; i < root->cnt; i++)
     {
         int res = trie_serialize_formatA_helper(root->chd[i], map, count, loglen, file);
         // write way up...
         trie_serialize_formatA_ender(res, count, loglen, file);
     }
+    // Koniec drzewa.
     fputc((char)(count+1), file);
 }
 
-void trie_serialize(struct trie_node *root, FILE *file)
+/**
+ * Wczytuje poddrzewo z pliku.
+ * 
+ * @param[in,out] node Korzeń podderzewa do wczytania.
+ * @param[in] lcount Ilość liter w alfabecie.
+ * @param[in] loglen Sufit z logarytmu z maksymalnej długości słowa.
+ * @param[in] translator Przypisanie 8-bitowej wartości znakowi.
+ * @param[in] file Strumień, z którego wczytać poddrzewo.
+ * 
+ * @return Ilość skoków do zrobienia w górę.
+ */
+static int trie_deserialize_formatA_helper(struct trie_node *node, int lcount, int loglen, wchar_t * translator, FILE *file)
 {
-    struct char_map * map = char_map_init();
-    char symbol = 0;
-    int length = 0;
-    wchar_t trans[256];
-    wchar_t *tptr = trans;
-    wchar_t **tend = &tptr;
-    for(int i = 0; i < root->cnt; i++)
-    {
-        trie_fill_charmap(root->chd[i], map, tend, &symbol, 0, &length);
-    }
-    // we need at least 2 special characters!
-    if(char_map_count(map) <= 254)
-    {
-        trie_serialize_formatA(root, map, trans, length, file);
-    }
-    else
-    {
-        assert(0 && "Unimplemented");
-    }
-    char_map_done(map);
-}
-
-int trie_deserialize_formatA_helper(struct trie_node *node, int lcount, int loglen, wchar_t * translator, FILE *file)
-{
+    // Czy instrukcja skoku w górę powinna oznaczać węzeł jako liść.
     int setleaf = 1;
     while(1)
     {
         int cmd = fgetc(file);
         if(cmd < 0) assert(0);  // WRONG FILE?
+        // Obsługa różnych rodzajów instrukcji
         else if(cmd < lcount)
         {
             // add letter
@@ -438,14 +448,24 @@ int trie_deserialize_formatA_helper(struct trie_node *node, int lcount, int logl
     }
 }
 
-struct trie_node * trie_deserialize_formatA(FILE *file)
+
+/**
+ * Wczytuje drzewo z pliku w formacie "dictA"
+ * 
+ * @param[in] file Strumień, z którego wczytać drzewo.
+ * @return Wskaźnik na wczytane drzewo.
+ */
+static struct trie_node * trie_deserialize_formatA(FILE *file)
 {
+    // Nagłówki
     int lcount = fgetc(file);
     int loglen = fgetc(file);
     int tb_len = fgetc(file)&0xFF;
     tb_len = (tb_len << 8) | (fgetc(file)&0xFF);
     tb_len = (tb_len << 8) | (fgetc(file)&0xFF);
     tb_len = (tb_len << 8) | (fgetc(file)&0xFF);
+    
+    // Przyporządkowanie 8-bitowej wartości znakowi.
     wchar_t *translator = malloc(sizeof(wchar_t)*lcount);
     {
         char *trans_map = malloc(sizeof(char)*(tb_len+1));
@@ -461,6 +481,8 @@ struct trie_node * trie_deserialize_formatA(FILE *file)
         }
         free(trans_map);
     }
+    
+    // Wczytanie drzewa.
     struct trie_node *root = trie_init();
     while(1)
     {
@@ -481,31 +503,37 @@ struct trie_node * trie_deserialize_formatA(FILE *file)
     return root;
 }
 
-struct trie_node * trie_deserialize(FILE *file)
-{
-    char header[6];
-    if(fgets(header, 6, file) == NULL) return NULL;
-    if(strncmp(header, "dict", 4) != 0) return NULL;
-    switch(header[4])
-    {
-        case 'A': return trie_deserialize_formatA(file);
-        default: return NULL;
-    }
-}
-
-void fix_size(wchar_t **created, int length, int *capacity)
+/**
+ * Wydłuża string-a jeśli trzeba, aby móc dodać do niego kolejną literę.
+ * 
+ * @param[in,out] string Wskaźnik na stringa, którego ew. wydłużyć.
+ * @param[in] length Aktualna długość stringa.
+ * @param[in,out] capacity Aktualna pojemność stringa.
+ */
+static void fix_size(wchar_t **string, int length, int *capacity)
 {
     if(length >= *capacity)
     {
         (*capacity) *= 2;
         wchar_t * newstr = malloc(sizeof(wchar_t)*(*capacity));
-        memcpy(newstr, *created, length);
-        free(*created);
-        *created = newstr;
+        memcpy(newstr, *string, length);
+        free(*string);
+        *string = newstr;
     }
 }
 
-void trie_hints_helper(struct trie_node *node, const wchar_t *word,
+/**
+ * Znajduje podpowiedzi w danym poddrzewie.
+ * 
+ * @param[in] node Poddrzewo do przeszukania.
+ * @param[in] word Podsłowo wzorcowe, wg którego szukać podpowiedzi.
+ * @param[in,out] created Słowo reprezentowane przez node'a.
+ * @param[in] length Długość słowa created.
+ * @param[in,out] capacity Wskaźnik na pojemność stringu created.
+ * @param[in,out] points Ilość dozwolonych jeszcze zmian w podsłowie wzorcowym.
+ * @param[in,out] list Lista wygenerowanych podpowiedzi.
+ */
+static void trie_hints_helper(struct trie_node *node, const wchar_t *word,
                        wchar_t **created, int length, int *capacity,
                        int points, struct word_list *list)
 {
@@ -570,9 +598,133 @@ void trie_hints_helper(struct trie_node *node, const wchar_t *word,
     }
 }
 
-int locale_sorter(const void *a, const void *b)
+/**
+ * Porównuje dwa stringi alfabetycznie.
+ * 
+ * Komparator dla qsort.
+ * 
+ * @param[in] a Wskaźnik na pierwszego stringa.
+ * @param[in] b Wskaźnik na drugiego stringa.
+ * 
+ * @return Wynik porównania.
+ */
+static int locale_sorter(const void *a, const void *b)
 {
     return wcscoll(*(const wchar_t**)a, *(const wchar_t**)b);
+}
+
+/**
+ * @}
+ */
+
+/** @name Elementy interfejsu 
+   @{
+ */
+
+struct trie_node * trie_init()
+{
+    struct trie_node *root = malloc(sizeof(struct trie_node));
+    root->val = 0;
+    root->cnt = 0;
+    root->leaf = 0;
+    root->cap = 0;
+    root->chd = NULL;
+    return root;
+}
+
+void trie_done(struct trie_node *root)
+{
+    trie_clear(root);
+    free(root);
+}
+
+
+void trie_clear(struct trie_node *node)
+{
+    if(node->chd == NULL) return;
+    for(int i = 0; i < node->cnt; i++)
+    {
+        trie_clear(node->chd[i]);
+        free(node->chd[i]);
+    }
+    free(node->chd);
+}
+
+int trie_insert(struct trie_node* root, const wchar_t* word)
+{
+    assert(word[0] != 0);
+    struct trie_node *child = trie_get_child_or_add_empty(root, word[0]);
+    if(word[1] == 0)
+    {
+        // Trzeba sprawdzić, czy słowo przypadkiem już nie istnieje!
+        if(child->leaf) return 0;
+        child->leaf = 1;
+        return 1;
+    }
+    else
+    {
+        // Chamsko dodajemy
+        return trie_insert(child, word + 1);
+    }
+}
+
+int trie_find(struct trie_node* root, const wchar_t* word)
+{
+    if(word[0] == 0) return root->leaf;
+    struct trie_node *child = trie_get_child(root, word[0]);
+    if(child == NULL) return 0;
+    return trie_find(child, word + 1);
+}
+
+int trie_delete(struct trie_node* root, const wchar_t* word)
+{
+    assert(word[0] != 0);
+    struct trie_node *child = trie_get_child(root, word[0]);
+    if(child == NULL)
+    {
+      return 0;
+    }
+    else
+    {
+      return trie_delete_helper(child, root, word + 1);
+    }
+}
+
+void trie_serialize(struct trie_node *root, FILE *file)
+{
+    struct char_map * map = char_map_init();
+    char symbol = 0;
+    int length = 0;
+    wchar_t trans[256];
+    wchar_t *tptr = trans;
+    wchar_t **tend = &tptr;
+    for(int i = 0; i < root->cnt; i++)
+    {
+        trie_fill_charmap(root->chd[i], map, tend, &symbol, 0, &length);
+    }
+    // we need at least 2 special characters!
+    if(char_map_size(map) <= 254)
+    {
+        trie_serialize_formatA(root, map, trans, length, file);
+    }
+    else
+    {
+        assert(0 && "Unimplemented");
+    }
+    char_map_done(map);
+}
+
+
+struct trie_node * trie_deserialize(FILE *file)
+{
+    char header[6];
+    if(fgets(header, 6, file) == NULL) return NULL;
+    if(strncmp(header, "dict", 4) != 0) return NULL;
+    switch(header[4])
+    {
+        case 'A': return trie_deserialize_formatA(file);
+        default: return NULL;
+    }
 }
 
 void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list)
@@ -583,14 +735,21 @@ void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *l
     wchar_t *buff = malloc(sizeof(wchar_t)*capacity);
     trie_hints_helper(root, word, &buff, 0, &capacity, 1, &mylist);
     free(buff);
-    qsort(mylist.array, mylist.size, sizeof(wchar_t*), locale_sorter);
-    word_list_add(list, mylist.array[0]);
+    const wchar_t ** array = (const wchar_t **)word_list_get(&mylist);
+    qsort(array, word_list_size(&mylist), sizeof(wchar_t*), locale_sorter);
+    word_list_add(list, array[0]);
     for(int i = 1; i < word_list_size(&mylist); i++)
     {
-        if(wcscmp(mylist.array[i-1], mylist.array[i]) != 0)
+        if(wcscmp(array[i-1], array[i]) != 0)
         {
-            word_list_add(list, mylist.array[i]);
+            word_list_add(list, array[i]);
         }
     }
     word_list_done(&mylist);
 }
+
+/**@}*/
+
+
+
+

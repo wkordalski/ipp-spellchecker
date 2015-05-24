@@ -17,6 +17,9 @@
 #include <wctype.h>
 
 
+/**
+ * Stany parsowania lini komend.
+ */
 enum ProgramOptionsParsingState
 {
     PositionalParameters
@@ -25,11 +28,15 @@ enum ProgramOptionsParsingState
 
 /**
   Funkcja main.
-  Główna funkcja programu do testowania słownika. 
+  @param[in] argc Liczba parametrów linii komend
+  @param[in] argv Lista argumentów linii komend
+  @return 0 jeśli program zakończył się powodzeniem, 1 jeśli nastąpił błąd
  */
 int main(int argc, char *argv[])
 {
     setlocale(LC_ALL, "pl_PL.UTF-8");
+    
+    // Opcje linii komend
     int verbose = 0;
     char *dictfile = NULL;
     enum ProgramOptionsParsingState pars = PositionalParameters;
@@ -51,6 +58,8 @@ int main(int argc, char *argv[])
             }
         }
     }
+    
+    // Otwieranie konkretnego słownika
     if(dictfile == NULL)
     {
         printf("Dictionary file not specified.\n");
@@ -70,6 +79,9 @@ int main(int argc, char *argv[])
         return 1;
     }
     fclose(fdict);
+    
+    
+    // Przetwarzanie tekstu do sprawdzenia.
     FILE *data = stdin;
     wint_t ch;
     int cap = 1024;
@@ -84,6 +96,7 @@ int main(int argc, char *argv[])
     {
         if(iswalpha(ch))
         {
+            // Dodaj kolejną literę słowa do bufora
             if(len == 0) ccl = col;
             word[len] = ch;
             lowr[len] = towlower(ch);
@@ -104,6 +117,7 @@ int main(int argc, char *argv[])
         {
             if(len > 0)
             {
+                // Sprawdź słowo z bufora
                 word[len] = 0;
                 lowr[len] = 0;
                 if(!dictionary_find(dict, lowr))
@@ -129,6 +143,7 @@ int main(int argc, char *argv[])
                 }
                 len = 0;
             }
+            // Ogarnianie wiersza i kolumny
             if(ch == L'\n')
             {
                 row++;
@@ -138,9 +153,11 @@ int main(int argc, char *argv[])
             {
                 col++;
             }
+            // Wypisywanie znaków na wyjście
             printf("%lc", ch);
         }
     }
+    // Usuwanie buforów i słownika
     free(word);
     free(lowr);
     dictionary_done(dict);

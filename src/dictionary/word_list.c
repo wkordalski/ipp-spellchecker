@@ -3,6 +3,8 @@
 
   @ingroup dictionary
   @author Jakub Pawlewicz <pan@mimuw.edu.pl>
+          Wojciech Kordalski <wojtek.kordalski@gmail.com>
+          
   @copyright Uniwerstet Warszawski
   @date 2015-05-10
  */
@@ -12,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+
 
 /** @name Elementy interfejsu 
    @{
@@ -27,7 +30,9 @@ void word_list_init(struct word_list *list)
 void word_list_done(struct word_list *list)
 {
     for(int i = 0; i < list->size; i++)
+    {
         free((void*)(list->array[i]));
+    }
     free(list->array);
 }
 
@@ -35,6 +40,7 @@ int word_list_add(struct word_list *list, const wchar_t *word)
 {
     if(list->size >= list->capacity)
     {
+        // Enlarge the list
         list->capacity *= 2;
         const wchar_t ** na = malloc(sizeof(wchar_t*)*(list->capacity));
         if(na == NULL) return 0;
@@ -48,6 +54,16 @@ int word_list_add(struct word_list *list, const wchar_t *word)
     memcpy(copy, word, sizeof(wchar_t)*len);
     list->array[list->size++] = copy;
     return 1;
+}
+
+size_t word_list_size(const struct word_list *list)
+{
+    return list->size;
+}
+
+const wchar_t * const * word_list_get(const struct word_list *list)
+{
+    return list->array;
 }
 
 /**@}*/
