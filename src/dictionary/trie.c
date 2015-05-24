@@ -663,7 +663,7 @@ int trie_insert(struct trie_node* root, const wchar_t* word)
     }
     else
     {
-        // Chamsko dodajemy
+        // Zwyczajnie dodajemy
         return trie_insert(child, word + 1);
     }
 }
