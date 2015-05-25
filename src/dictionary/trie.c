@@ -34,6 +34,28 @@ struct trie_node
  * @{
  */
 
+/**
+ * Sprawdza niektóre niezmienniki dla węzła.
+ * 
+ * @param[in] node Węzeł do przetestowania.
+ * 
+ * @return 1 jeśli węzeł jest poprawny, 0 otherwise.
+ */
+static int trie_node_integrity(struct trie_node *node)
+{
+    if(node == NULL) return 0;
+    if(node->cnt > node->cap) return 0;
+    if(node->cap > 0 && node->chd == NULL) return 0;
+    if(node->cap == 0 && node->chd != NULL) return 0;
+    for(int i = 0; i < node->cnt; i++)
+    {
+        for(int j = 0; j < node->cnt; j++)
+        {
+            if(i != j && node->chd[i] == node->chd[j]) return 0;
+        }
+    }
+    return 1;
+}
 
 /**
  * Znajduje gdzie powinien być node o wartości value wśród dzieci pewnego węzła.
@@ -48,7 +70,8 @@ struct trie_node
  */
 static int trie_get_child_index(struct trie_node *node, wchar_t value, int begin, int end)
 {
-    assert(node->chd != NULL || (node->chd == NULL && node->cnt == 0));
+    assert(trie_node_integrity(node));
+    assert(0 <= begin && begin <= end && end <= node->cnt);
     if(node->chd == NULL) return -1;
     if(end - begin <= 2)
     {
@@ -87,7 +110,7 @@ static int trie_get_child_index(struct trie_node *node, wchar_t value, int begin
  */
 static struct trie_node * trie_get_child(struct trie_node *node, wchar_t value)
 {
-    assert(node != NULL);
+    assert(trie_node_integrity(node));
     int r = trie_get_child_index(node, value, 0, node->cnt);
     if(r == -1) return NULL;
     if(r == node->cnt) return NULL;
@@ -109,7 +132,7 @@ static struct trie_node * trie_get_child_or_add_empty(struct trie_node *node, wc
     if(r == -1)
     {
         // Let's add an empty children list
-        node->chd = malloc(4 * sizeof(struct node *));
+        node->chd = malloc(4 * sizeof(struct trie_node *));
         node->cnt = 1;
         node->cap = 4;
         node->chd[0] = trie_init();
@@ -132,7 +155,7 @@ static struct trie_node * trie_get_child_or_add_empty(struct trie_node *node, wc
         else
         {
             node->cap *= 2;
-            struct trie_node ** table = malloc((node->cap) * sizeof(struct node *));
+            struct trie_node ** table = malloc((node->cap) * sizeof(struct trie_node *));
             struct trie_node ** source = node->chd;
             for(int i = 0; i < r; i++)
             {
@@ -184,23 +207,24 @@ static void trie_cleanup(struct trie_node *node, struct trie_node *parent)
             {
                 table[i] = source[i];
             }
-            parent->chd = table;
-            for(int i = parent->cnt - 1; i > r; i--)
+            for(int i = r + 1; i < parent->cnt; i++)
             {
                 table[i-1] = source[i];
             }
+            parent->chd = table;
             parent->cnt--;
             free(source);
         }
         else
         {
             table = parent->chd;
-            for(int i = parent->cnt - 1; i > r; i--)
+            for(int i = r + 1; i < parent->cnt; i++)
             {
                 table[i-1] = source[i];
             }
             parent->cnt--;
         }
+
     }
     free(node);
 }
@@ -216,12 +240,14 @@ static void trie_cleanup(struct trie_node *node, struct trie_node *parent)
  */
 static int trie_delete_helper(struct trie_node *node, struct trie_node *parent, const wchar_t *word)
 {
+    assert(trie_node_integrity(node));
     if(word[0] == 0)
     {
         if(node->leaf)
         {
             node->leaf = 0;
             trie_cleanup(node, parent);
+            assert(trie_node_integrity(parent));
             return 1;
         }
         else
@@ -232,13 +258,14 @@ static int trie_delete_helper(struct trie_node *node, struct trie_node *parent, 
     struct trie_node *child = trie_get_child(node, word[0]);
     if(child == NULL)
     {
-      return 0;
+        return 0;
     }
     else
     {
-      int r = trie_delete_helper(child, node, word + 1);
-      trie_cleanup(node, parent);
-      return r;
+        int r = trie_delete_helper(child, node, word + 1);
+        trie_cleanup(node, parent);
+        assert(trie_node_integrity(parent));
+        return r;
     }
 }
 
@@ -249,28 +276,29 @@ static int trie_delete_helper(struct trie_node *node, struct trie_node *parent, 
  * Każdemu znakowi zostaje przypisana wartość 8-bitowa.
  * Dodatkowo zostaje obliczona długość najdłuższego słowa.
  * 
- * @param[in] root Drzewo, którego litery wrzucić do char-mapy.
+ * @param[in] node Drzewo, którego litery wrzucić do char-mapy.
  * @param[in,out] map Char-mapa do wypełnienia.
  * @param[in,out] trans Przyporządkowanie wartości 8-bitowej do znaku ze słownika.
  * @param[in,out] symbol Kolejna wartość 8-bitowa do przypisania.
  * @param[in] length Głębokość w drzewie, na której aktualnie jesteśmy.
  * @param[in,out] maxlength Największa do tej pory uzyskana głębokość.
  */
-static void trie_fill_charmap(struct trie_node *root, struct char_map *map, wchar_t **trans, char *symbol, int length, int *maxlength)
+static void trie_fill_charmap(struct trie_node *node, struct char_map *map, wchar_t **trans, char *symbol, int length, int *maxlength)
 {
+    assert(trie_node_integrity(node));
     if(length > *maxlength) *maxlength = length;
     if(char_map_size(map) < char_map_capacity())
     {
-        if(char_map_put(map, root->val, *symbol))
+        if(char_map_put(map, node->val, *symbol))
         {
             (*symbol)++;
-            (**trans) = root->val;
+            (**trans) = node->val;
             (*trans)++;
         }
     }
-    for(int i = 0; i < root->cnt; i++)
+    for(int i = 0; i < node->cnt; i++)
     {
-        trie_fill_charmap(root->chd[i], map, trans, symbol, length + 1, maxlength);       
+        trie_fill_charmap(node->chd[i], map, trans, symbol, length + 1, maxlength);       
     }
 }
 
@@ -310,6 +338,7 @@ static void trie_serialize_formatA_ender(int res, int count, int loglen, FILE *f
  */
 static int trie_serialize_formatA_helper(struct trie_node *node, struct char_map *map, int count, int loglen, FILE *file)
 {
+    assert(trie_node_integrity(node));
     char coded = 0;
     assert(char_map_get(map, node->val, &coded));
     fputc(coded, file);
@@ -340,6 +369,7 @@ static int trie_serialize_formatA_helper(struct trie_node *node, struct char_map
  */
 static void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int length, int loglen, FILE *file)
 {
+    assert(trie_node_integrity(root));
     // Nagłówek pliku
     fputs("dictA", file);
     int count = char_map_size(map);
@@ -413,6 +443,7 @@ static void trie_serialize_formatA(struct trie_node *root, struct char_map *map,
  */
 static int trie_deserialize_formatA_helper(struct trie_node *node, int lcount, int loglen, wchar_t * translator, FILE *file)
 {
+    assert(trie_node_integrity(node));
     // Czy instrukcja skoku w górę powinna oznaczać węzeł jako liść.
     int setleaf = 1;
     while(1)
@@ -438,11 +469,13 @@ static int trie_deserialize_formatA_helper(struct trie_node *node, int lcount, i
         else if(cmd <= lcount + loglen)
         {
             if(setleaf) node->leaf = 1;
+            assert(trie_node_integrity(node));
             return (1<<(cmd - lcount - 1))-1;
         }
         else
         {
             if(setleaf) node->leaf = 1;
+            assert(trie_node_integrity(node));
             return cmd - lcount - loglen - 1;
         }
     }
@@ -500,6 +533,7 @@ static struct trie_node * trie_deserialize_formatA(FILE *file)
         if(cmd >= lcount) break;
     }
     free(translator);
+    assert(trie_node_integrity(root));
     return root;
 }
 
@@ -537,6 +571,7 @@ static void trie_hints_helper(struct trie_node *node, const wchar_t *word,
                        wchar_t **created, int length, int *capacity,
                        int points, struct word_list *list)
 {
+    assert(trie_node_integrity(node));
     // We can only add one letter, so...
     fix_size(created, length + 1, capacity);
     if(points <= 0)
@@ -623,6 +658,7 @@ static int locale_sorter(const void *a, const void *b)
  */
 void trie_print_helper(struct trie_node *node, wchar_t **str, int len, int *cap)
 {
+    assert(trie_node_integrity(node));
     fix_size(str, len + 2, cap);
     (*str)[len] = node->val;
     if(node->leaf)
@@ -652,11 +688,13 @@ struct trie_node * trie_init()
     root->leaf = 0;
     root->cap = 0;
     root->chd = NULL;
+    assert(trie_node_integrity(root));
     return root;
 }
 
 void trie_done(struct trie_node *root)
 {
+    assert(trie_node_integrity(root));
     trie_clear(root);
     free(root);
 }
@@ -664,6 +702,7 @@ void trie_done(struct trie_node *root)
 
 void trie_clear(struct trie_node *node)
 {
+    assert(trie_node_integrity(node));
     if(node->chd == NULL) return;
     for(int i = 0; i < node->cnt; i++)
     {
@@ -671,10 +710,15 @@ void trie_clear(struct trie_node *node)
         free(node->chd[i]);
     }
     free(node->chd);
+    node->chd = NULL;
+    node->cap = 0;
+    node->cnt = 0;
+    assert(trie_node_integrity(node));
 }
 
 int trie_insert(struct trie_node* root, const wchar_t* word)
 {
+    assert(trie_node_integrity(root));
     assert(word[0] != 0);
     struct trie_node *child = trie_get_child_or_add_empty(root, word[0]);
     if(word[1] == 0)
@@ -682,17 +726,21 @@ int trie_insert(struct trie_node* root, const wchar_t* word)
         // Trzeba sprawdzić, czy słowo przypadkiem już nie istnieje!
         if(child->leaf) return 0;
         child->leaf = 1;
+        assert(trie_node_integrity(root));
         return 1;
     }
     else
     {
         // Zwyczajnie dodajemy
-        return trie_insert(child, word + 1);
+        int r = trie_insert(child, word + 1);
+        assert(trie_node_integrity(root));
+        return r;
     }
 }
 
 int trie_find(struct trie_node* root, const wchar_t* word)
 {
+    assert(trie_node_integrity(root));
     if(word[0] == 0) return root->leaf;
     struct trie_node *child = trie_get_child(root, word[0]);
     if(child == NULL) return 0;
@@ -701,20 +749,24 @@ int trie_find(struct trie_node* root, const wchar_t* word)
 
 int trie_delete(struct trie_node* root, const wchar_t* word)
 {
+    assert(trie_node_integrity(root));
     assert(word[0] != 0);
     struct trie_node *child = trie_get_child(root, word[0]);
     if(child == NULL)
     {
-      return 0;
+        return 0;
     }
     else
     {
-      return trie_delete_helper(child, root, word + 1);
+        int r = trie_delete_helper(child, root, word + 1);
+        assert(trie_node_integrity(root));
+        return r;
     }
 }
 
 void trie_serialize(struct trie_node *root, FILE *file)
 {
+    assert(trie_node_integrity(root));
     struct char_map * map = char_map_init();
     char symbol = 0;
     int length = 0;
@@ -745,15 +797,19 @@ struct trie_node * trie_deserialize(FILE *file)
     char header[6];
     if(fgets(header, 6, file) == NULL) return NULL;
     if(strncmp(header, "dict", 4) != 0) return NULL;
+    struct trie_node *ret = NULL;
     switch(header[4])
     {
-        case 'A': return trie_deserialize_formatA(file);
-        default: return NULL;
+        case 'A': ret = trie_deserialize_formatA(file); break;
+        default: ret = NULL;
     }
+    assert(trie_node_integrity(ret));
+    return ret;
 }
 
 void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list)
 {
+    assert(trie_node_integrity(root));
     struct word_list mylist;
     word_list_init(&mylist);
     int capacity = 1024;
@@ -775,11 +831,12 @@ void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *l
 
 void trie_print(struct trie_node *root)
 {
+    assert(trie_node_integrity(root));
     int cap = 1024;
     wchar_t *str = malloc(sizeof(wchar_t)*cap);
     for(int i = 0; i < root->cnt; i++)
     {
-	trie_print_helper(root->chd[i], &str, 0, &cap);
+        trie_print_helper(root->chd[i], &str, 0, &cap);
     }
     free(str);
 }
