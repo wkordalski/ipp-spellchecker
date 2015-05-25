@@ -100,8 +100,9 @@ void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
   Przykładowe nazwy pl_PL, albo en_US.
   @param[out] size Liczba dostępnych języków.
   @return Tablica nazw języków.
+  Użytkownik jest odpowiedzialny za zwolnienie tej tablicy.
   */
-const char * const * dictionary_lang_list(int *size);
+const char * * dictionary_lang_list(int *size);
 
 
 /**
