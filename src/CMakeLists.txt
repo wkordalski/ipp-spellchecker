@@ -7,6 +7,8 @@ cmake_minimum_required (VERSION 2.6)
 # nazwa projektu i język źródeł
 project (Spellcheck C)    
 
+enable_testing ()
+
 # deklarujemy opcję DEBUG, domyślnie wyłączoną (opcję można włączyć przez argument -DDEBUG=ON)
 option (DEBUG OFF)
 
@@ -16,6 +18,14 @@ if (DEBUG)
 else (DEBUG)
     set(CMAKE_BUILD_TYPE RELEASE)
 endif (DEBUG)
+
+# szukamy biblioteki libcmocka
+find_library (CMOCKA cmocka)
+
+# jeśli nie znaleźliśmy, to informujemy użytkownika. Jeśli zaś znaleźliśmy, to włączamy testowanie
+if (NOT CMOCKA)
+    message (WARNING "Cmocka library not found. Plase install; see http://cmocka.org.")
+endif (NOT CMOCKA)
 
 # ustawiamy flagi kompilacji w wersji debug i release
 set(CMAKE_C_FLAGS_DEBUG "-std=gnu99 -Wall -pedantic -g")
@@ -30,8 +40,8 @@ add_subdirectory (dict-editor)
 add_subdirectory (dict-check)
 
 # dodajemy obsługę Doxygena: sprawdzamy, czy jest zainstalowany i jeśli tak:
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
+find_package (Doxygen)
+if (DOXYGEN_FOUND)
     # wskazujemy lokalizacją pliku konfiguracyjnego i podajemy jego docelową lokalizację w folderze, gdzie następuje kompilacja
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
     # dodajemy cel doc: użycie make doc spowoduje wywołanie doxygena z odpowiednim plikiem konfiguracyjnym w folderze kompilacji. 
@@ -41,4 +51,4 @@ if(DOXYGEN_FOUND)
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             COMMENT "Generating API documentation with Doxygen"
             )
-endif(DOXYGEN_FOUND)
+endif (DOXYGEN_FOUND)
