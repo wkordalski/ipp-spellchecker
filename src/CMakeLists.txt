@@ -1,7 +1,7 @@
 # Plik konfiguracyjny CMake do zadania zaliczeniowego.
 # Autor: Tomasz Kociumaka
 
-# zabezpieczamy się przed niekompatybilnością ze starszymi wersjami CMake
+# zabezpieczamy się przed niekompatybilnością ze starszymi wersjami CMake
 cmake_minimum_required (VERSION 2.6)
 
 # nazwa projektu i język źródeł
@@ -21,8 +21,16 @@ endif (DEBUG)
 set(CMAKE_C_FLAGS_DEBUG "-std=gnu99 -Wall -pedantic -g")
 set(CMAKE_C_FLAGS_RELEASE "-std=gnu99 -O3")
 
-# wskazujemy na foldery, gdzie znajdują się pliki nagłówkowe.
-include_directories (dictionary)
+# wskazujemy na foldery, gdzie znajdują się pliki nagłówkowe.
+include_directories (dictionary ${CMAKE_BINARY_DIR})
+
+# ustawiamy, gdzie trzymać plik konfiguracyjny. Jeśli przy uruchamianiu CMake'a coś podano, już nie zmieniamy.
+if (NOT CONF_PATH)
+    set(CONF_PATH $ENV{HOME}/.dictionary.rc)
+endif (NOT CONF_PATH)
+
+# plik konfiguracyjny
+configure_file(${CMAKE_SOURCE_DIR}/conf.h.in ${CMAKE_BINARY_DIR}/conf.h)
 
 # wskazujemy na foldery, gdzie znajdują się szczegółowe pliki CMakeLists.txt
 add_subdirectory (dictionary)
