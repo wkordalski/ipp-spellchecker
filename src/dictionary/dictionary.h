@@ -79,7 +79,7 @@ int dictionary_save(const struct dictionary *dict, FILE* stream);
   Inicjuje i wczytuje słownik.
   Słownik ten należy zniszczyć za pomocą dictionary_done().
   @param[in,out] stream Strumień, skąd ma być wczytany słownik.
-  @return Nowy słownik lub NULL, jeśli operacja się nie powiedzie.
+  @return Wczytany słownik lub NULL, jeśli operacja się nie powiedzie.
   */
 struct dictionary * dictionary_load(FILE* stream);
 
@@ -93,4 +93,32 @@ struct dictionary * dictionary_load(FILE* stream);
 void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
                       struct word_list *list);
 
+
+/**
+  Zwraca nazwy języków, dla których dostępne są słowniki.
+  Powinny to być nazwy lokali bez kodowania. np.
+  Przykładowe nazwy pl_PL, albo en_US.
+  @param[out] size Liczba dostępnych języków.
+  @return Tablica nazw języków.
+  */
+const char * const * dictionary_lang_list(int *size);
+
+
+/**
+  Inicjuje i wczytuje słownik dla zadanego języka.
+  Słownik ten należy zniszczyć za pomocą dictionary_done().
+  @param[in] lang Nazwa języka, patrz dictionary_lang_list().
+  @return Słownik dla danego języka lub NULL, jeśli operacja się nie powiedzie.
+  */
+struct dictionary * dictionary_load_lang(const char *lang);
+
+
+/**
+  Zapisuje słownik jak słownik dla ustalonego języka.
+  @param[in] dict Słownik.
+  @param[in] lang Nazwa języka, patrz dictionary_lang_list().
+  @return <0 jeśli operacja się nie powiedzie, 0 w p.p.
+  */
+int dictionary_save_lang(const struct dictionary *dict, const char *lang);
+    
 #endif /* __DICTIONARY_H__ */
