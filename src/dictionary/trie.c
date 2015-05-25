@@ -334,14 +334,13 @@ static int trie_serialize_formatA_helper(struct trie_node *node, struct char_map
  * @param[in] map Char-mapa przypisująca znakowi wartość 8-bitową.
  * @param[in] trans Przypisanie 8-bitowej wartości znakowi.
  * @param[in] length Maksymalna długość słowa w słowniku.
+ * @param[in] loglen Sufit z logarytmu z length
  * @param[in] file Plik, do którego zapisać wygenerowane instrukcje.
  */
-static void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int length, FILE *file)
+static void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int length, int loglen, FILE *file)
 {
     // Nagłówek pliku
     fputs("dictA", file);
-    int loglen = 0;
-    while((length+1) > (1<<loglen)) loglen++;
     int count = char_map_size(map);
     fputc((char)count, file);
     fputc((char)loglen, file);
@@ -614,6 +613,29 @@ static int locale_sorter(const void *a, const void *b)
 }
 
 /**
+ * Wypisuje słowa z danego poddrzewa.
+ * 
+ * @param[in] node Węzęł reprezentujący poddrzewo.
+ * @param[in] str Prefiks dodany do słowa
+ * @param[in] len Długość prefiksu.
+ * @param[in,out] cap Wskaźnik na miejsce w pamięci gdzie przechowywana jest pojemność str.
+ */
+void trie_print_helper(struct trie_node *node, wchar_t **str, int len, int *cap)
+{
+    fix_size(str, len + 2, cap);
+    (*str)[len] = node->val;
+    if(node->leaf)
+    {
+	(*str)[len+1] = L'\0';
+	printf("%ls\n", *str);
+    }
+    for(int i = 0; i < node->cnt; i++)
+    {
+	trie_print_helper(node->chd[i], str, len+1, cap);
+    }
+}
+
+/**
  * @}
  */
 
@@ -702,10 +724,12 @@ void trie_serialize(struct trie_node *root, FILE *file)
     {
         trie_fill_charmap(root->chd[i], map, tend, &symbol, 0, &length);
     }
-    // we need at least 2 special characters!
-    if(char_map_size(map) <= 254)
+    // we need at least 1 + loglen special characters!
+    int loglen = 0;
+    while((length+1) > (1<<loglen)) loglen++;
+    if(char_map_size(map) <= 255-loglen)
     {
-        trie_serialize_formatA(root, map, trans, length, file);
+        trie_serialize_formatA(root, map, trans, length, loglen, file);
     }
     else
     {
@@ -737,7 +761,7 @@ void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *l
     free(buff);
     const wchar_t ** array = (const wchar_t **)word_list_get(&mylist);
     qsort(array, word_list_size(&mylist), sizeof(wchar_t*), locale_sorter);
-    word_list_add(list, array[0]);
+    if(word_list_size(&mylist) > 0) word_list_add(list, array[0]);
     for(int i = 1; i < word_list_size(&mylist); i++)
     {
         if(wcscmp(array[i-1], array[i]) != 0)
@@ -746,6 +770,17 @@ void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *l
         }
     }
     word_list_done(&mylist);
+}
+
+void trie_print(struct trie_node *root)
+{
+    int cap = 1024;
+    wchar_t *str = malloc(sizeof(wchar_t)*cap);
+    for(int i = 0; i < root->cnt; i++)
+    {
+	trie_print_helper(root->chd[i], &str, 0, &cap);
+    }
+    free(str);
 }
 
 /**@}*/

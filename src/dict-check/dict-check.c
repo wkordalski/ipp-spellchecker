@@ -133,6 +133,10 @@ int main(int argc, char *argv[])
                         {
                             fprintf(stderr, " %ls", arr[i]);
                         }
+                        if(word_list_size(&words) == 0)
+                        {
+                            fprintf(stderr, " ");
+                        }
                         word_list_done(&words);
                         fprintf(stderr, "\n");
                     }
