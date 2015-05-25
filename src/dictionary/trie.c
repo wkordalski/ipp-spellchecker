@@ -163,7 +163,7 @@ static void trie_cleanup(struct trie_node *node, struct trie_node *parent)
 {
     if(node->leaf != 0 || node->cnt > 0) return;
     int r = trie_get_child_index(parent, node->val, 0, parent->cnt);
-    assert(r != -1 && r < parent->cnt && parent->chd[r] == node);
+    assert(r >= 0 && r < parent->cnt && parent->chd[r] == node);
     if(parent->cnt == 1)
     {
         parent->cnt = 0;
@@ -173,6 +173,7 @@ static void trie_cleanup(struct trie_node *node, struct trie_node *parent)
     }
     else
     {
+        assert(parent->cnt > 1);
         struct trie_node **table;
         struct trie_node **source = parent->chd;
         if(parent->cnt * 3 < parent->cap && parent->cap > 4)
