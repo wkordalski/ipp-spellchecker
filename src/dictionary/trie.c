@@ -23,11 +23,11 @@
  */
 struct trie_node
 {
-    wchar_t val;                ///< Wartość węzła
-    unsigned int cap : 32;      ///< Pojemność tablicy dzieci
-    unsigned int cnt : 31;      ///< Ilość dzieci
-    unsigned int leaf : 1;      ///< Czy tutaj kończy się słowo
     struct trie_node **chd;     ///< Lista dzieci
+    wchar_t val;                ///< Wartość węzła
+    unsigned int cap;           ///< Pojemność tablicy dzieci
+    unsigned int cnt;           ///< Ilość dzieci
+    unsigned int leaf;          ///< Czy tutaj kończy się słowo
 };
 
 /** @name Funkcje pomocnicze
@@ -73,31 +73,22 @@ static int trie_get_child_index(struct trie_node *node, wchar_t value, int begin
     assert(trie_node_integrity(node));
     assert(0 <= begin && begin <= end && end <= node->cnt);
     if(node->chd == NULL) return -1;
-    if(end - begin <= 2)
-    {
-        if(begin < end)
-        {
-            if(node->chd[begin]->val >= value) return begin;
-            begin++;
-        }
-        if(begin < end)
-        {
-            if(node->chd[begin]->val >= value) return begin;
-            begin++;
-        }
-        return begin;
-    }
-    else
+    while(end - begin > 2)
     {
         int middle = (begin + end)/2;
         wchar_t midval = node->chd[middle]->val;
         if(midval == value)
             return middle;
         else if(midval > value)
-            return trie_get_child_index(node, value, begin, middle);
+            end = middle;
         else
-            return trie_get_child_index(node, value, middle+1, end);
+            begin = middle + 1;
     }
+    for(int i = begin; i < end; i++)
+    {
+        if(node->chd[i]->val >= value) return i;
+    }
+    return end;
 }
 
 /**
