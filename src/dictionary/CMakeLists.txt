@@ -13,4 +13,17 @@ if (CMOCKA)
 
     # wreszcie deklarujemy, że to test
     add_test (word_list_unit_test word_list_test)
+    
+    
+    # dodajemy plik wykonywalny z testem    
+    add_executable (charmap_test charmap.c charmap_test.c)
+
+    # i linkujemy go z biblioteką do testowania
+    target_link_libraries (charmap_test ${CMOCKA})
+
+    # włącz testable.h
+    set_target_properties(charmap_test PROPERTIES COMPILE_DEFINITIONS UNIT_TESTING=1)
+    
+    # wreszcie deklarujemy, że to test
+    add_test (charmap_unit_test charmap_test)
 endif (CMOCKA)

@@ -14,6 +14,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "../testable.h"
+
 /** Pojemność char-mapy */
 #define CHAR_MAP_CAPACITY 256
 
@@ -40,23 +42,32 @@ struct char_map
  * @param[in] begin Początek przedziału, w którym może być dany element.
  * @param[in] end Koniec przedziału, w którym może być dany element.
  * 
- * @return Indek, gdzie powinien się znaleźć (lub jest) dany element.
+ * @return Indeks, gdzie powinien się znaleźć (lub jest) dany element.
  */
-int char_map_get_position_in_bucket(wchar_t *bucket, wchar_t key, int begin, int end)
+static int char_map_get_position_in_bucket(const wchar_t const *bucket, wchar_t key, int begin, int end)
 {
+    assert(bucket != NULL);
+    assert(begin <= end);
     if(end == begin) return begin;
     if(end - begin <= 2)
     {
-        if(begin < end && bucket[begin] >= key) return begin;
-        else begin++;
-        if(begin < end && bucket[begin] >= key) return begin;
-        else begin++;
+        for(int i = begin; i < end; i++)
+        {
+            if(bucket[i] >= key) return i;
+        }
         return end;
     }
     int middle = (begin+end)/2;
     if(bucket[middle] == key) return middle;
     if(bucket[middle] > key) return char_map_get_position_in_bucket(bucket, key, begin, middle);
     else return char_map_get_position_in_bucket(bucket, key, middle + 1, end);
+}
+
+static int char_map_bucket_size(struct char_map *map, int bucket)
+{
+    assert(map != NULL);
+    assert(bucket < char_map_capacity());
+    return map->counts[bucket];
 }
 
 /**
@@ -80,6 +91,7 @@ struct char_map * char_map_init()
 
 void char_map_done(struct char_map *map)
 {
+    assert(map != NULL);
     free(map);
 }
 
@@ -90,11 +102,13 @@ int char_map_capacity()
 
 int char_map_size(struct char_map* map)
 {
+    assert(map != NULL);
     return map->count;
 }
 
 int char_map_put(struct char_map *map, wchar_t key, char value)
 {
+    assert(map != NULL);
     int bucket = key % CHAR_MAP_CAPACITY;
     int place = char_map_get_position_in_bucket(map->keys[bucket], key, 0, map->counts[bucket]);
     if(map->counts[bucket] > place && map->keys[bucket][place] == key) return 0;
@@ -116,9 +130,10 @@ int char_map_put(struct char_map *map, wchar_t key, char value)
 
 int char_map_get(struct char_map *map, wchar_t key, char *value)
 {
+    assert(map != NULL);
     int bucket = key % CHAR_MAP_CAPACITY;
     int place = char_map_get_position_in_bucket(map->keys[bucket], key, 0, map->counts[bucket]);
-    if(map->keys[bucket][place] == key)
+    if(place < map->counts[bucket] && map->keys[bucket][place] == key)
     {
         *value = map->values[bucket][place];
         return 1;
