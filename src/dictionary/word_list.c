@@ -15,6 +15,8 @@
 #include <string.h>
 #include <wchar.h>
 
+#include "../testable.h"
+
 
 /** @name Elementy interfejsu 
    @{

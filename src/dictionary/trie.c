@@ -18,6 +18,8 @@
 #include <string.h>
 #include <wchar.h>
 
+#include "../testable.h"
+
 /**
  * Reprezentuje węzeł drzewa TRIE.
  */

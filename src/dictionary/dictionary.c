@@ -69,8 +69,8 @@ struct dictionary * dictionary_load(FILE* stream)
 {
     struct trie_node * root = trie_deserialize(stream);
     if(root == NULL) return NULL;
-    struct dictionary * dict = dictionary_new();
-    trie_done(dict->root);
+    struct dictionary * dict = 
+        (struct dictionary *) malloc(sizeof(struct dictionary));
     dict->root = root;
     return dict;
 }
