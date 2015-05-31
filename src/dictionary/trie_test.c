@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <locale.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -1180,6 +1181,190 @@ static void trie_clear_2_test(void **state)
     trie_done(node);
 }
 
+static void trie_insert_1_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    assert_int_equal(trie_insert(node, L"x"), 1);
+    assert_int_equal(node->cnt, 1);
+    assert_int_equal(node->chd[0]->val, L'x');
+    assert_int_equal(node->chd[0]->cnt, 0);
+    assert_int_not_equal(node->chd[0]->leaf, 0);
+    trie_done(node);
+}
+
+static void trie_insert_2_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    assert_int_equal(trie_insert(node, L"f"),1);
+    assert_int_equal(node->cnt, 1);
+    assert_int_equal(node->chd[0]->val, L'f');
+    assert_int_equal(node->chd[0]->cnt, 0);
+    assert_int_not_equal(node->chd[0]->leaf, 0);
+    trie_done(node);
+}
+
+static void trie_insert_3_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    child->leaf = 1;
+    assert_int_equal(trie_insert(node, L"f"),0);
+    assert_int_equal(node->cnt, 1);
+    assert_int_equal(node->chd[0]->val, L'f');
+    assert_int_equal(node->chd[0]->cnt, 0);
+    assert_int_not_equal(node->chd[0]->leaf, 0);
+    trie_done(node);
+}
+
+static void trie_insert_4_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    assert_int_equal(trie_insert(node, L"fl"),1);
+    assert_int_equal(node->cnt, 1);
+    assert_int_equal(node->chd[0]->val, L'f');
+    assert_int_equal(node->chd[0]->cnt, 1);
+    assert_int_equal(node->chd[0]->leaf, 0);
+    assert_int_equal(node->chd[0]->chd[0]->val, L'l');
+    assert_int_equal(node->chd[0]->chd[0]->cnt, 0);
+    assert_int_equal(node->chd[0]->chd[0]->leaf, 1);
+    trie_done(node);
+}
+
+static void trie_find_1_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    assert_int_equal(trie_find(node, L""),0);
+    trie_done(node);
+}
+
+static void trie_find_2_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    node->leaf = 1;
+    assert_int_equal(trie_find(node, L""),1);
+    trie_done(node);
+}
+
+static void trie_find_3_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    assert_int_equal(trie_find(node, L"n"),0);
+    trie_done(node);
+}
+
+static void trie_find_4_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    assert_int_equal(trie_find(node, L"f"),0);
+    trie_done(node);
+}
+
+static void trie_find_5_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    child->leaf = 1;
+    assert_int_equal(trie_find(node, L"f"),1);
+    trie_done(node);
+}
+
+static void trie_delete_1_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    assert_int_equal(trie_delete(node, L"e"), 0);
+    trie_done(node);
+}
+
+static void trie_delete_2_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    assert_int_equal(trie_delete(node, L"f"), 0);
+    trie_done(node);
+}
+
+static void trie_delete_3_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    child->leaf = 1;
+    assert_int_equal(trie_delete(node, L"f"), 1);
+    trie_done(node);
+}
+
+static void trie_serialize_test(void **state)
+{
+    struct trie_node *node = trie_init();
+    trie_insert(node, L"p");
+    trie_insert(node, L"gl");
+    trie_insert(node, L"gr");
+    char *output = "dictA\x04\x01\x00\x00\x00\x04""glrp\x00\x01\x06\x02\x07\x03\x06\x05";
+    unsigned char buff[64];
+    memset(buff, 0, 64);
+    FILE * file = fmemopen(buff, 64, "w");
+    trie_serialize(node, file);
+    fclose(file);
+    assert_memory_equal(buff, output, 23);
+    trie_done(node);
+}
+
+static void trie_deserialize_test(void **state)
+{
+    char *output = "dictA\x04\x01\x00\x00\x00\x04""glrp\x00\x01\x06\x02\x07\x03\x06\x05";
+    unsigned char buff[64];
+    memset(buff, 0, 64);
+    memcpy(buff, output, 23);
+    FILE * file = fmemopen(buff, 64, "r");
+    struct trie_node * node = trie_deserialize(file);
+    fclose(file);
+    assert_int_equal(node->cnt, 2);
+    assert_int_equal(node->chd[0]->val, L'g');
+    assert_int_equal(node->chd[0]->cnt, 2);
+    assert_false(node->chd[0]->leaf);
+    assert_int_equal(node->chd[1]->val, L'p');
+    assert_int_equal(node->chd[1]->cnt, 0);
+    assert_true(node->chd[1]->leaf);
+    
+    assert_int_equal(node->chd[0]->chd[0]->val, L'l');
+    assert_int_equal(node->chd[0]->chd[0]->cnt, 0);
+    assert_true(node->chd[0]->chd[0]->leaf);
+    assert_int_equal(node->chd[0]->chd[1]->val, L'r');
+    assert_int_equal(node->chd[0]->chd[1]->cnt, 0);
+    assert_true(node->chd[0]->chd[1]->leaf);
+    
+    trie_done(node);
+}
+
+static void trie_hints_test(void **state)
+{
+    setlocale(LC_ALL, "pl_PL.UTF-8");
+    struct trie_node *node = trie_init();
+    trie_insert(node, L"ala");
+    trie_insert(node, L"ola");
+    trie_insert(node, L"ąla");
+    trie_insert(node, L"aga");
+    trie_insert(node, L"ble");
+    trie_insert(node, L"bla");
+    trie_insert(node, L"blaa");
+    trie_insert(node, L"bbla");
+    struct word_list list;
+    word_list_init(&list);
+    trie_hints(node, L"bla", &list);
+    assert_int_equal(word_list_size(&list), 7);
+    assert_true(wcscmp(word_list_get(&list)[0], L"ala")==0);
+    assert_true(wcscmp(word_list_get(&list)[1], L"ąla")==0);
+    assert_true(wcscmp(word_list_get(&list)[2], L"bbla")==0);
+    assert_true(wcscmp(word_list_get(&list)[3], L"bla")==0);
+    assert_true(wcscmp(word_list_get(&list)[4], L"blaa")==0);
+    assert_true(wcscmp(word_list_get(&list)[5], L"ble")==0);
+    assert_true(wcscmp(word_list_get(&list)[6], L"ola")==0);
+    word_list_done(&list);
+    trie_done(node);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(trie_init_done_test),
@@ -1235,6 +1420,21 @@ int main(void) {
         cmocka_unit_test(trie_hints_helper_change_3_test),
         cmocka_unit_test(trie_clear_1_test),
         cmocka_unit_test(trie_clear_2_test),
+        cmocka_unit_test(trie_insert_1_test),
+        cmocka_unit_test(trie_insert_2_test),
+        cmocka_unit_test(trie_insert_3_test),
+        cmocka_unit_test(trie_insert_4_test),
+        cmocka_unit_test(trie_find_1_test),
+        cmocka_unit_test(trie_find_2_test),
+        cmocka_unit_test(trie_find_3_test),
+        cmocka_unit_test(trie_find_4_test),
+        cmocka_unit_test(trie_find_5_test),
+        cmocka_unit_test(trie_delete_1_test),
+        cmocka_unit_test(trie_delete_2_test),
+        cmocka_unit_test(trie_delete_3_test),
+        cmocka_unit_test(trie_serialize_test),
+        cmocka_unit_test(trie_deserialize_test),
+        cmocka_unit_test(trie_hints_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
