@@ -305,6 +305,7 @@ static void trie_fill_charmap(struct trie_node *node, struct char_map *map, wcha
  */
 static void trie_serialize_formatA_ender(int res, int count, int loglen, FILE *file)
 {
+    assert(res > 0);
     if(res < 256 - (count+loglen))
     {
         fputc((char)(count+loglen+res), file);
@@ -333,7 +334,7 @@ static int trie_serialize_formatA_helper(struct trie_node *node, struct char_map
 {
     assert(trie_node_integrity(node));
     char coded = 0;
-    assert(char_map_get(map, node->val, &coded));
+    if(!char_map_get(map, node->val, &coded)) assert(0);
     fputc(coded, file);
     if(node->cnt == 0) return 1;
     else if(node->leaf) fputc((char)count, file);
@@ -360,7 +361,7 @@ static int trie_serialize_formatA_helper(struct trie_node *node, struct char_map
  * @param[in] loglen Sufit z logarytmu z length
  * @param[in] file Plik, do którego zapisać wygenerowane instrukcje.
  */
-static void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int length, int loglen, FILE *file)
+static void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int loglen, FILE *file)
 {
     assert(trie_node_integrity(root));
     // Nagłówek pliku
@@ -394,10 +395,10 @@ static void trie_serialize_formatA(struct trie_node *root, struct char_map *map,
         }
     }
     // Długość danych przypisujących wartość 8-bitową znakowi
-    fputc((char)((tb_len>>24)&0xFF), file);
-    fputc((char)((tb_len>>16)&0xFF), file);
-    fputc((char)((tb_len>>8)&0xFF), file);
-    fputc((char)(tb_len&0xFF), file);
+    fputc((unsigned char)((tb_len>>24)&0xFF), file);
+    fputc((unsigned char)((tb_len>>16)&0xFF), file);
+    fputc((unsigned char)((tb_len>>8)&0xFF), file);
+    fputc((unsigned char)(tb_len&0xFF), file);
     
     // Dane przypisujące wartość 8-bitową znakowi
     for(int i = 0; i < tb_len; i++)
@@ -543,7 +544,7 @@ static void fix_size(wchar_t **string, int length, int *capacity)
     {
         (*capacity) *= 2;
         wchar_t * newstr = malloc(sizeof(wchar_t)*(*capacity));
-        memcpy(newstr, *string, length);
+        memcpy(newstr, *string, (*capacity)/2);
         free(*string);
         *string = newstr;
     }
@@ -656,12 +657,12 @@ void trie_print_helper(struct trie_node *node, wchar_t **str, int len, int *cap)
     (*str)[len] = node->val;
     if(node->leaf)
     {
-	(*str)[len+1] = L'\0';
-	printf("%ls\n", *str);
+        (*str)[len+1] = L'\0';
+        printf("%ls\n", *str);
     }
     for(int i = 0; i < node->cnt; i++)
     {
-	trie_print_helper(node->chd[i], str, len+1, cap);
+        trie_print_helper(node->chd[i], str, len+1, cap);
     }
 }
 
@@ -775,7 +776,7 @@ void trie_serialize(struct trie_node *root, FILE *file)
     while((length+1) > (1<<loglen)) loglen++;
     if(char_map_size(map) <= 255-loglen)
     {
-        trie_serialize_formatA(root, map, trans, length, loglen, file);
+        trie_serialize_formatA(root, map, trans, loglen, file);
     }
     else
     {
