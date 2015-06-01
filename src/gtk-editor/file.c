@@ -49,12 +49,12 @@ void load_file (char *fname) {
     g_free(filename);
     filename = fname;
     // Set titlebar to the file name
-    gtk_window_set_title(GTK_WINDOW(window), wt);
+    gtk_window_set_title(GTK_WINDOW(editor_window), wt);
     g_free(wt);
   }
 
   // Get the ending iterator of buffer into p
-  gtk_text_buffer_get_end_iter(buf, &p);
+  gtk_text_buffer_get_end_iter(editor_buf, &p);
 
   while ((l = fread(fbuf, 1, sizeof(fbuf), f)) > 0) {
     // Only text files in Utf-8 format can be opened
@@ -66,20 +66,20 @@ void load_file (char *fname) {
       g_printerr("File is not in UTF-8 format : %s\n", err->message);
       g_clear_error(&err);
       filename = NULL; // if an invalid file is opened enter the file name as NULL
-      gtk_window_set_title(GTK_WINDOW(window),
+      gtk_window_set_title(GTK_WINDOW(editor_window),
                            "Text Editor (Insert file name)");
       fclose(f);
 
       return;
     }
-    gtk_text_buffer_insert(buf, &p, text, bw);
+    gtk_text_buffer_insert(editor_buf, &p, text, bw);
     g_free(text);
   }
 
-  gtk_text_buffer_set_modified(buf, FALSE);
+  gtk_text_buffer_set_modified(editor_buf, FALSE);
     
-  gtk_text_buffer_get_start_iter(buf, &p);
-  gtk_text_buffer_place_cursor(buf, &p);
+  gtk_text_buffer_get_start_iter(editor_buf, &p);
+  gtk_text_buffer_place_cursor(editor_buf, &p);
   if (ferror(f)) {
     g_printerr("%s: %s\n", fname, g_strerror(errno));
     fclose(f);
@@ -121,7 +121,7 @@ gboolean save_file (char *fname) {
     GtkTextIter start, end, p;
 
     // Get the starting and ending position
-    gtk_text_buffer_get_bounds(GTK_TEXT_BUFFER(buf), &start, &end);
+    gtk_text_buffer_get_bounds(GTK_TEXT_BUFFER(editor_buf), &start, &end);
     p = start;
     while (!gtk_text_iter_equal(&start, &end)) {
       gchar *buf, *fbuf;
@@ -156,13 +156,13 @@ gboolean save_file (char *fname) {
   }
     
   if (ok) {
-    gtk_text_buffer_set_modified(buf, FALSE);
+    gtk_text_buffer_set_modified(editor_buf, FALSE);
     if (fname != filename) {
       gchar *wt = g_strdup_printf("TextView (%s)", fname);
 
       g_free(filename);
       filename = fname;
-      gtk_window_set_title(GTK_WINDOW(window), wt);
+      gtk_window_set_title(GTK_WINDOW(editor_window), wt);
       g_free(wt);
     }
   }
@@ -176,10 +176,11 @@ gboolean save_if_modified () {
   int resp;
   GtkWidget *dialog;
 
-  if (!gtk_text_buffer_get_modified(GTK_TEXT_BUFFER(buf)))
+  if (!gtk_text_buffer_get_modified(GTK_TEXT_BUFFER(editor_buf)))
     return TRUE;
 
-  dialog = gtk_message_dialog_new(GTK_WINDOW(window), 0, GTK_MESSAGE_QUESTION,
+  dialog = gtk_message_dialog_new(GTK_WINDOW(editor_window), 0,
+                                  GTK_MESSAGE_QUESTION,
                                   GTK_BUTTONS_NONE,
                                   "Buffer Modified. Do you want to save it now?");
   gtk_dialog_add_buttons(GTK_DIALOG(dialog), GTK_STOCK_YES, GTK_RESPONSE_YES,

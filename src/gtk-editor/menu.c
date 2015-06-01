@@ -24,12 +24,18 @@ GdkAtom sel_atom = GDK_SELECTION_CLIPBOARD;
 #define MENU_HELP 14
 #define MENU_ABOUT 15
 
+static GtkUIManager *uimanager;
+
+static GtkWidget *get_named_widget (char *name) {
+  return gtk_ui_manager_get_widget(uimanager, name);
+}
+
 static void menu_new (GtkMenuItem *menuitem, gpointer data) {
   if (save_if_modified()) {
     // get all the current tag table and put them in the new buffer
-    buf = gtk_text_buffer_new(gtk_text_buffer_get_tag_table(buf));
-    gtk_text_view_set_buffer(GTK_TEXT_VIEW(view), buf);
-    g_object_unref(G_OBJECT(buf)); 
+    editor_buf = gtk_text_buffer_new(gtk_text_buffer_get_tag_table(editor_buf));
+    gtk_text_view_set_buffer(GTK_TEXT_VIEW(editor_view), editor_buf);
+    g_object_unref(G_OBJECT(editor_buf)); 
     // needed for freeing memory by the buffer when a new buffer is created
   }
 }
@@ -37,10 +43,10 @@ static void menu_new (GtkMenuItem *menuitem, gpointer data) {
 static void menu_open (GtkMenuItem *menuitem, gpointer data) {
   if (save_if_modified()) {
     // call save if modified when user opens a new file
-    buf = gtk_text_buffer_new(gtk_text_buffer_get_tag_table(buf));
-    gtk_text_view_set_buffer(GTK_TEXT_VIEW(view), buf);
+    editor_buf = gtk_text_buffer_new(gtk_text_buffer_get_tag_table(editor_buf));
+    gtk_text_view_set_buffer(GTK_TEXT_VIEW(editor_view), editor_buf);
     // needed for freeing memory by the buffer when a new buffer is created
-    g_object_unref(G_OBJECT(buf));
+    g_object_unref(G_OBJECT(editor_buf));
     load_file(NULL);
   }
 }
@@ -55,32 +61,33 @@ static void menu_save_as (GtkMenuItem *menuitem, gpointer data) {
 
 static void menu_quit (GtkMenuItem *menuitem, gpointer data) {
   if (save_if_modified())
-    gtk_widget_destroy(window);
+    gtk_widget_destroy(editor_window);
 }
 
 static void menu_cut (GtkMenuItem *menuitem, gpointer data) {
-  gtk_text_buffer_cut_clipboard(buf, gtk_clipboard_get(sel_atom), TRUE);
+  gtk_text_buffer_cut_clipboard(editor_buf, gtk_clipboard_get(sel_atom), TRUE);
 }
 
 static void menu_copy (GtkMenuItem *menuitem, gpointer data) {
-  gtk_text_buffer_copy_clipboard(buf, gtk_clipboard_get(sel_atom));
+  gtk_text_buffer_copy_clipboard(editor_buf, gtk_clipboard_get(sel_atom));
 }
 
 static void menu_paste (GtkMenuItem *menuitem, gpointer data) {
   // If null text is inserted at the current cursor position
-  gtk_text_buffer_paste_clipboard(buf, gtk_clipboard_get(sel_atom), NULL, TRUE);
+  gtk_text_buffer_paste_clipboard(editor_buf, gtk_clipboard_get(sel_atom),
+                                  NULL, TRUE);
 }
 
 static void menu_select_all (GtkMenuItem *menuitem, gpointer data) {
   GtkTextIter p; 
     
   // Get the starting point of the buffer
-  gtk_text_buffer_get_start_iter(buf, &p);
+  gtk_text_buffer_get_start_iter(editor_buf, &p);
   // Ignore the selection made by the mouse
-  gtk_text_buffer_place_cursor(buf, &p);
+  gtk_text_buffer_place_cursor(editor_buf, &p);
   // Get the ending point of the buffer
-  gtk_text_buffer_get_end_iter(buf, &p);
-  gtk_text_buffer_move_mark_by_name(buf, "selection_bound", &p);
+  gtk_text_buffer_get_end_iter(editor_buf, &p);
+  gtk_text_buffer_move_mark_by_name(editor_buf, "selection_bound", &p);
 }
 
 static void menu_find (GtkMenuItem *menuitem, gpointer data) {
@@ -124,16 +131,16 @@ static GtkActionEntry entries[] = {
 GtkWidget* create_menu (GtkAccelGroup *accel) {
   // UI Manager creates a menu from XML description
   GtkActionGroup *group = gtk_action_group_new("MainActionGroup");
-  GtkUIManager *uimanager = gtk_ui_manager_new();
   GtkWidget *menubar;
 
+  uimanager = gtk_ui_manager_new();
   gtk_action_group_add_actions(group, entries, NUM_ENTRIES, NULL);
 
   gtk_ui_manager_insert_action_group(uimanager, group, 0);
   gtk_ui_manager_add_ui_from_file(uimanager, UI_DIR "/menu.ui", NULL);
 
   menubar = gtk_ui_manager_get_widget(uimanager, "/MenuBar");
-  gtk_window_add_accel_group(GTK_WINDOW(window),
+  gtk_window_add_accel_group(GTK_WINDOW(editor_window),
                              gtk_ui_manager_get_accel_group(uimanager));
     
   return menubar;

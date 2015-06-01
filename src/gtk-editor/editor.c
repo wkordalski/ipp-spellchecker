@@ -7,17 +7,18 @@
 
 // gcc editor.c -Wall -o Editor `pkg-config --cflags --libs gtk+-2.0`
 
-GtkWidget *window;   // Main Gtk window
+GtkWidget *editor_window;   // Main Gtk window
 
-GtkWidget *view;     // Text view widget where all the typing is done
-GtkTextBuffer *buf;  // Textview buffer
+GtkWidget *editor_view;     // Text view widget where all the typing is done
+GtkTextBuffer *editor_buf;  // Textview buffer
 
 // Display error message
 
 static void err_msg (const gchar *msg) {
   GtkWidget *dialog;  // pop up window with only OK button
 
-  dialog = gtk_message_dialog_new(GTK_WINDOW(window), 0, GTK_MESSAGE_ERROR,
+  dialog = gtk_message_dialog_new(GTK_WINDOW(editor_window), 0,
+                                  GTK_MESSAGE_ERROR,
                                   GTK_BUTTONS_OK, msg);
   gtk_dialog_run(GTK_DIALOG(dialog));
   gtk_widget_destroy(dialog);  // destroy the window after ok is pressed
@@ -38,27 +39,29 @@ int main (int argc, char *argv[]) {
   GtkAccelGroup *accel = NULL;
       
   gtk_init(&argc, &argv);
-  window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  editor_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
   // If the user quits the app  
-  g_signal_connect(G_OBJECT(window), "delete_event",
+  g_signal_connect(G_OBJECT(editor_window), "delete_event",
                    G_CALLBACK(delete_event), NULL);
-  g_signal_connect(G_OBJECT(window), "destroy",
+  g_signal_connect(G_OBJECT(editor_window), "destroy",
                    G_CALLBACK(gtk_main_quit), NULL);
 
-  gtk_window_set_title(GTK_WINDOW(window), "Text Editor (Insert file name)");
-  gtk_window_set_default_size(GTK_WINDOW(window), 600, 500);
+  gtk_window_set_title(GTK_WINDOW(editor_window),
+                       "Text Editor (Insert file name)");
+  gtk_window_set_default_size(GTK_WINDOW(editor_window), 600, 500);
     
   // Create a container where the menus and text widget go
   box = gtk_vbox_new(FALSE, 0);
-  gtk_container_add(GTK_CONTAINER(window), box);
+  gtk_container_add(GTK_CONTAINER(editor_window), box);
     
   // Create an accelerator for the item factory, keyboard shortcuts
   //accel = gtk_accel_group_new();
-  //gtk_window_add_accel_group(GTK_WINDOW(window), accel);
+  //gtk_window_add_accel_group(GTK_WINDOW(editor_window), accel);
     
   // Create a menu bar above the text view widget
   menu = create_menu(accel);
+  extend_menu(menu);
 
   // Put the menu in the menu container
   gtk_box_pack_start(GTK_BOX(box), menu, FALSE, FALSE, 0);
@@ -68,13 +71,13 @@ int main (int argc, char *argv[]) {
   gtk_box_pack_start(GTK_BOX(box), scroll, TRUE, TRUE, 0);
   
   // Create the text view widget
-  view = gtk_text_view_new();
-  gtk_container_add(GTK_CONTAINER(scroll), view);
+  editor_view = gtk_text_view_new();
+  gtk_container_add(GTK_CONTAINER(scroll), editor_view);
 
   // Get a buffer for the text view where everything gets stored
-  buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+  editor_buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(editor_view));
 
-  gtk_widget_show_all(window);
+  gtk_widget_show_all(editor_window);
 
   // Error checking
   g_set_printerr_handler(err_msg);

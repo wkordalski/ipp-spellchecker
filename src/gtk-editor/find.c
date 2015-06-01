@@ -55,7 +55,7 @@ void next_button_clicked (GtkWidget *next_button) {
   GtkTextMark *last_pos;
   GtkTextIter iter;
 
-  buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+  buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(editor_view));
   last_pos = gtk_text_buffer_get_mark(buffer, "last_pos");
   
   if (last_pos == NULL) {
@@ -71,27 +71,34 @@ void next_button_clicked (GtkWidget *next_button) {
   }
   
   gtk_text_buffer_get_iter_at_mark(buffer, &iter, last_pos);
-  find(GTK_TEXT_VIEW(view), gtk_entry_get_text(GTK_ENTRY(search_entry)), &iter);
+  find(GTK_TEXT_VIEW(editor_view),
+       gtk_entry_get_text(GTK_ENTRY(search_entry)),
+       &iter);
 }
 
 void search_button_clicked (GtkWidget *search_button) {
   GtkTextBuffer *buffer;
   GtkTextIter iter;
 
-  buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+  buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(editor_view));
   gtk_text_buffer_get_start_iter(buffer, &iter);
   
-  find(GTK_TEXT_VIEW(view), gtk_entry_get_text(GTK_ENTRY(search_entry)), &iter);
+  find(GTK_TEXT_VIEW(editor_view),
+       gtk_entry_get_text(GTK_ENTRY(search_entry)),
+       &iter);
 }
 
 void replace_button_clicked (GtkWidget *replace_button) {
   GtkTextBuffer *buffer;
   GtkTextIter iter;
  
-  buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+  buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(editor_view));
   gtk_text_buffer_get_start_iter(buffer, &iter);
   
-  replace(GTK_TEXT_VIEW(view), (gchar *)gtk_entry_get_text(GTK_ENTRY(search_entry)), (gchar *)gtk_entry_get_text(GTK_ENTRY(replace_entry)), &iter);
+  replace(GTK_TEXT_VIEW(editor_view),
+          (gchar *)gtk_entry_get_text(GTK_ENTRY(search_entry)),
+          (gchar *)gtk_entry_get_text(GTK_ENTRY(replace_entry)),
+          &iter);
 }
 
 void textfind () {
@@ -149,11 +156,13 @@ void text_find_replace () {
 
   search_button = gtk_button_new_with_label("Search");
   gtk_box_pack_start(GTK_BOX(hbox), search_button, FALSE, FALSE, 0);
-  g_signal_connect(G_OBJECT (search_button), "clicked", G_CALLBACK (search_button_clicked), NULL);
+  g_signal_connect(G_OBJECT (search_button), "clicked",
+                   G_CALLBACK (search_button_clicked), NULL);
   
   replace_button = gtk_button_new_with_label("Replace");
   gtk_box_pack_start(GTK_BOX(hbox), replace_button, FALSE, FALSE, 0);
-  g_signal_connect(G_OBJECT(replace_button), "clicked", G_CALLBACK(replace_button_clicked), NULL);
+  g_signal_connect(G_OBJECT(replace_button), "clicked",
+                   G_CALLBACK(replace_button_clicked), NULL);
 
   gtk_widget_show_all(win);
 }
