@@ -15,4 +15,9 @@
 #define CONF_PATH "@CONF_PATH@"
 
 
+/**
+ *  Maksymalna liczba podpowiedzi generowanych przez dictionary_hints().
+ */
+#define DICTIONARY_MAX_HINTS @DICTIONARY_MAX_HINTS@
+
 #endif /* __CONF_H__ */

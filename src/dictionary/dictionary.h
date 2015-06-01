@@ -14,14 +14,10 @@
 #define __DICTIONARY_H__
 
 #include "word_list.h"
+#include "conf.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <wchar.h>
-
-/**
-  Maksymalna liczba podpowiedzi generowanych przez dictionary_hints().
-  */
-#define DICTIONARY_MAX_HINTS 20
 
 
 /**
