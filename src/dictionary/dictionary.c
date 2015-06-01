@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 #define _GNU_SOURCE
 
@@ -159,6 +160,7 @@ struct dictionary * dictionary_load_lang(const char *lang)
 
 int dictionary_save_lang(const struct dictionary *dict, const char *lang)
 {
+    mkdir(CONF_PATH, S_IRWXU);
     int cp_len = strlen(CONF_PATH);
     int lg_len = strlen(lang);
     char * fname = malloc((cp_len+1+lg_len+5+1)*sizeof(char));
