@@ -94,12 +94,4 @@ struct trie_node * trie_deserialize(FILE *file);
  */
 void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list);
 
-
-/**
- * Wypisuje wyrazy z drzewa TRIE.
- * 
- * @param[in] root Drzewo do wypisania.
- */
-void trie_print(struct trie_node *root);
-
 #endif /* __TRIE_H__ */

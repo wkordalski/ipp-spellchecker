@@ -836,18 +836,6 @@ void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *l
     word_list_done(&mylist);
 }
 
-void trie_print(struct trie_node *root)
-{
-    assert(trie_node_integrity(root));
-    int cap = 1024;
-    wchar_t *str = malloc(sizeof(wchar_t)*cap);
-    for(int i = 0; i < root->cnt; i++)
-    {
-        trie_print_helper(root->chd[i], &str, 0, &cap);
-    }
-    free(str);
-}
-
 /**@}*/
 
 
