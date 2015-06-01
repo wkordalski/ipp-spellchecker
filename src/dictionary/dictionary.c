@@ -15,6 +15,8 @@
 #include "conf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
 
 #define _GNU_SOURCE
 
@@ -31,53 +33,20 @@ struct dictionary
 /** @name Funkcje pomocnicze
   @{
  */
-/**
-  Czyszczenie pamięci słownika
-  @param[in,out] dict słownik
- */
-static void dictionary_free(struct dictionary *dict)
-{
-    word_list_done(&dict->list);
-}
 
-static void skip_equal(const wchar_t **a, const wchar_t **b)
+int dict_file_filter(const struct dirent *f)
 {
-    while (**a == **b && **a != L'\0')
-    {
-        (*a)++;
-        (*b)++;
-    }
+    if(f->d_type != DT_REG) return 0;
+    int len = strlen(f->d_name);
+    if(len < 5) return 0;
+    if(strcmp(f->d_name + len - 5, ".dict")) return 0;
+    return 1;
 }
 
 /**
-  Zwraca czy słowo `a` można zamienić w `b` przez usunięcie znaku.
-  @param[in] a Dłuższe słowo.
-  @param[in] b Krótsze słowo.
-  @return 1 jeśli się da zamienić `a` w `b` przez usunięcia znaku, 0 w p.p.
+ * @}
  */
-static int can_transform_by_delete(const wchar_t *a, const wchar_t *b)
-{
-    skip_equal(&a, &b);
-    a++;
-    skip_equal(&a, &b);
-    return *a == L'\0' && *b == L'\0';
-}
 
-/**
-  Zwraca czy słowo `a` można zamienić w `b` przez zamianę znaku.
-  @param[in] a Pierwsze słowo.
-  @param[in] b Drugie słowo.
-  @return 1 jeśli się da zamienić `a` w `b` przez zamianę znaku, 0 w p.p.
- */
-static int can_transform_by_replace(const wchar_t *a, const wchar_t *b)
-{
-    skip_equal(&a, &b);
-    a++; b++;
-    skip_equal(&a, &b);
-    return *a == L'\0' && *b == L'\0';
-}
-
-/**@}*/
 /** @name Elementy interfejsu 
   @{
  */
@@ -131,6 +100,77 @@ void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
 {
     word_list_init(list);
     trie_hints(dict->root, word, list);
+}
+
+
+int dictionary_lang_list(char **list, size_t *list_len)
+{
+    struct dirent **output = NULL;
+    int r = scandir(CONF_PATH, &output, dict_file_filter, alphasort);
+    if(r < 0) return r;
+    if(output == NULL)
+    {
+        *list = malloc(sizeof(char));
+        (*list)[0] = 0;
+        *list_len = 1;
+        return 0;
+    }
+    size_t slen = 0;
+    for(int i = 0; output[i] != NULL; i++)
+    {
+        slen += strlen(output[i]->d_name) + 1-5;
+    }
+    if(slen == 0)
+    {
+        *list = malloc(sizeof(char));
+        (*list)[0] = 0;
+        *list_len = 1;
+        return 0;
+    }
+    *list = malloc(sizeof(char)*slen);
+    memset(*list, 0, slen);
+    size_t clen = 0;
+    for(int i = 0; output[i] != NULL; i++)
+    {
+        size_t len = strlen(output[i]->d_name) - 5;
+        memcpy(*list + clen, output[i]->d_name, len);
+        clen += len + 1;
+    }
+    *list_len = slen;
+    return 1;
+}
+
+struct dictionary * dictionary_load_lang(const char *lang)
+{
+    int cp_len = strlen(CONF_PATH);
+    int lg_len = strlen(lang);
+    char * fname = malloc((cp_len+1+lg_len+5+1)*sizeof(char));
+    memcpy(fname, CONF_PATH, cp_len);
+    fname[cp_len] = '/';
+    memcpy(fname+cp_len+1, lang, lg_len);
+    memcpy(fname+cp_len+1+lg_len, ".dict", 6);
+    FILE * f = fopen(fname, "w");
+    if(f == NULL) return NULL;
+    struct dictionary *r = dictionary_load(f);
+    fclose(f);
+    free(fname);
+    return r;
+}
+
+int dictionary_save_lang(const struct dictionary *dict, const char *lang)
+{
+    int cp_len = strlen(CONF_PATH);
+    int lg_len = strlen(lang);
+    char * fname = malloc((cp_len+1+lg_len+5+1)*sizeof(char));
+    memcpy(fname, CONF_PATH, cp_len);
+    fname[cp_len] = '/';
+    memcpy(fname+cp_len+1, lang, lg_len);
+    memcpy(fname+cp_len+1+lg_len, ".dict", 6);
+    FILE * f = fopen(fname, "w");
+    int r = dictionary_save(dict, f);
+    fclose(f);
+    free(fname);
+    return r;
 }
 
 /**@}*/

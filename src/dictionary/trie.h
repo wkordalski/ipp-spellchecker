@@ -75,7 +75,7 @@ int trie_delete(struct trie_node *root, const wchar_t *word);
  * @param[in] root Drzewo do zapisania.
  * @param[in] file Strumień, gdzie zapisać drzewo.
  */
-void trie_serialize(struct trie_node *root, FILE *file);
+int trie_serialize(struct trie_node *root, FILE *file);
 
 /**
  * Ładuje drzewo ze strumienia.

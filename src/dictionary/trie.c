@@ -303,20 +303,21 @@ static void trie_fill_charmap(struct trie_node *node, struct char_map *map, wcha
  * @param[in] loglen Sufit z logarytmu z maksymalnej długości słowa.
  * @param[in] file Plik, do którego zapisać wygenerowane instrukcje.
  */
-static void trie_serialize_formatA_ender(int res, int count, int loglen, FILE *file)
+static int trie_serialize_formatA_ender(int res, int count, int loglen, FILE *file)
 {
     assert(res > 0);
     if(res < 256 - (count+loglen))
     {
-        fputc((char)(count+loglen+res), file);
+        if(fputc((char)(count+loglen+res), file)<0) return -1;
     }
     else
     {
         for(int j = 0; res > (1<<j) && j < loglen; j++)
         {
-            if(res & (1<<j)) fputc((char)(count+1+j), file);
+            if(res & (1<<j)) if(fputc((char)(count+1+j), file)<0) return -1;
         }
     }
+    return 0;
 }
 
 /**
@@ -335,16 +336,18 @@ static int trie_serialize_formatA_helper(struct trie_node *node, struct char_map
     assert(trie_node_integrity(node));
     char coded = 0;
     if(!char_map_get(map, node->val, &coded)) assert(0);
-    fputc(coded, file);
+    if(fputc(coded, file)<0) return -1;
     if(node->cnt == 0) return 1;
-    else if(node->leaf) fputc((char)count, file);
+    else if(node->leaf) if(fputc((char)count, file)<0) return -1;
     for(int i = 0; i + 1 < node->cnt; i++)
     {
         int res = trie_serialize_formatA_helper(node->chd[i], map, count, loglen, file);
+        if(res < 0) return -1;
         // write way up...
-        trie_serialize_formatA_ender(res, count, loglen, file);
+        if(trie_serialize_formatA_ender(res, count, loglen, file) <0) return -1;
     }
     int res = trie_serialize_formatA_helper(node->chd[node->cnt-1], map, count, loglen, file);
+    if(res < 0) return -1;
     return res + 1;
 }
 
@@ -361,14 +364,14 @@ static int trie_serialize_formatA_helper(struct trie_node *node, struct char_map
  * @param[in] loglen Sufit z logarytmu z length
  * @param[in] file Plik, do którego zapisać wygenerowane instrukcje.
  */
-static void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int loglen, FILE *file)
+static int trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int loglen, FILE *file)
 {
     assert(trie_node_integrity(root));
     // Nagłówek pliku
-    fputs("dictA", file);
+    if(fputs("dictA", file)<0) return -1;
     int count = char_map_size(map);
-    fputc((char)count, file);
-    fputc((char)loglen, file);
+    if(fputc((char)count, file)<0) return -1;
+    if(fputc((char)loglen, file)<0) return -1;
     
     
     // Wygenerowanie danych przypisujących liczbę 8-bitową znakowi.
@@ -395,15 +398,15 @@ static void trie_serialize_formatA(struct trie_node *root, struct char_map *map,
         }
     }
     // Długość danych przypisujących wartość 8-bitową znakowi
-    fputc((unsigned char)((tb_len>>24)&0xFF), file);
-    fputc((unsigned char)((tb_len>>16)&0xFF), file);
-    fputc((unsigned char)((tb_len>>8)&0xFF), file);
-    fputc((unsigned char)(tb_len&0xFF), file);
+    if(fputc((unsigned char)((tb_len>>24)&0xFF), file)<0) return -1;
+    if(fputc((unsigned char)((tb_len>>16)&0xFF), file)<0) return -1;
+    if(fputc((unsigned char)((tb_len>>8)&0xFF), file)<0) return -1;
+    if(fputc((unsigned char)(tb_len&0xFF), file)<0) return -1;
     
     // Dane przypisujące wartość 8-bitową znakowi
     for(int i = 0; i < tb_len; i++)
     {
-        fputc(trans_buffer[i], file);
+        if(fputc(trans_buffer[i], file)<0) return -1;
     }
     free(trans_buffer);
     
@@ -417,11 +420,13 @@ static void trie_serialize_formatA(struct trie_node *root, struct char_map *map,
     for(int i = 0; i < root->cnt; i++)
     {
         int res = trie_serialize_formatA_helper(root->chd[i], map, count, loglen, file);
+        if(res < 0) return -1;
         // write way up...
-        trie_serialize_formatA_ender(res, count, loglen, file);
+        if(trie_serialize_formatA_ender(res, count, loglen, file)<0) return -1;
     }
     // Koniec drzewa.
-    fputc((char)(count+1), file);
+    if(fputc((char)(count+1), file)<0) return -1;
+    return 0;
 }
 
 /**
@@ -443,7 +448,7 @@ static int trie_deserialize_formatA_helper(struct trie_node *node, int lcount, i
     while(1)
     {
         int cmd = fgetc(file);
-        if(cmd < 0) assert(0);  // WRONG FILE?
+        if(cmd < 0) return -77;
         // Obsługa różnych rodzajów instrukcji
         else if(cmd < lcount)
         {
@@ -451,6 +456,7 @@ static int trie_deserialize_formatA_helper(struct trie_node *node, int lcount, i
             struct trie_node * child = trie_get_child_or_add_empty(node, translator[cmd]);
             setleaf = 1;
             int ret = trie_deserialize_formatA_helper(child, lcount, loglen, translator, file);
+            if(ret == -77) return -77;
             if(ret <= 0) setleaf = 0;
             if(ret > 0)  return ret - 1;
             continue;
@@ -521,6 +527,11 @@ static struct trie_node * trie_deserialize_formatA(FILE *file)
             // add letter
             struct trie_node * child = trie_get_child_or_add_empty(root, translator[cmd]);
             int ret = trie_deserialize_formatA_helper(child, lcount, loglen, translator, file);
+            if(ret == -77)
+            {
+                trie_done(root);
+                return NULL;
+            }
             if(ret == 0) continue;
             if(ret > 0) break;
         }
@@ -758,7 +769,7 @@ int trie_delete(struct trie_node* root, const wchar_t* word)
     }
 }
 
-void trie_serialize(struct trie_node *root, FILE *file)
+int trie_serialize(struct trie_node *root, FILE *file)
 {
     assert(trie_node_integrity(root));
     struct char_map * map = char_map_init();
@@ -776,13 +787,15 @@ void trie_serialize(struct trie_node *root, FILE *file)
     while((length+1) > (1<<loglen)) loglen++;
     if(char_map_size(map) <= 255-loglen)
     {
-        trie_serialize_formatA(root, map, trans, loglen, file);
+        int r = trie_serialize_formatA(root, map, trans, loglen, file);
+        char_map_done(map);
+        return r;
     }
     else
     {
-        assert(0 && "Unimplemented");
+        char_map_done(map);
+        return -1;
     }
-    char_map_done(map);
 }
 
 
