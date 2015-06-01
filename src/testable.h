@@ -1,18 +1,11 @@
-/*
- * Copyright 2008 Google Inc.
- * Copyright 2015 Tomasz Kociumaka
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+/** @file
+  Nagłówek modyfikujący źródła w celu testowania.
+  
+  @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
+          
+  @copyright Google Inc.
+  @copyright Uniwersytet Warszawski
+  @date 2015-05-31
  */
 
 #ifndef TESTABLE_H
@@ -48,6 +41,34 @@ void * _test_malloc(const size_t size, const char* file, const int line);
 void _test_free(void* const ptr, const char* file, const int line);
 
 
+extern unsigned char buff[1024];
+extern int readp;
+extern int writep;
+extern int filelen;
+
+#ifdef fputc
+#undef fputc
+#endif
+#define fputc(char, file) test_fputc(char)
+int test_fputc(unsigned char c);
+
+#ifdef fputs
+#undef fputs
+#endif
+#define fputs(str, file) test_fputs(str)
+int test_fputs(char *s);
+
+#ifdef fgetc
+#undef fgetc
+#endif
+#define fgetc(file) test_fgetc()
+int test_fgetc();
+
+#ifdef fgets
+#undef fgets
+#endif
+#define fgets(str, cnt, file) test_fgets(str, cnt)
+char* test_fgets(char *str, int cnt);
 
 /* All functions in this object need to be exposed to the test application,
  * so redefine static to nothing. */

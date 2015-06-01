@@ -1,3 +1,13 @@
+/** @file
+  Test implementacji słownika
+  
+  @ingroup dictionary
+  @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
+          
+  @copyright Uniwerstet Warszawski
+  @date 2015-05-31
+ */
+
 #include <stdlib.h>
 #include <locale.h>
 #include <string.h>
@@ -10,12 +20,6 @@
 #include "word_list.h"
 #include "trie.h"
 
-#ifdef free
-#undef free
-#endif /* free */
-#define free(ptr) _test_free(ptr, __FILE__, __LINE__)
-void _test_free(void* const ptr, const char* file, const int line);
-
 /**
   Struktura przechowująca słownik.
   
@@ -26,6 +30,9 @@ struct dictionary
     struct trie_node *root;      ///< Korzeń drzewa TRIE
 };
 
+/**
+ * Testuje tworzenie i usuwanie słownika.
+ */
 static void dictionary_new_done_test(void **state)
 {
     struct dictionary *dict = dictionary_new();
@@ -33,6 +40,9 @@ static void dictionary_new_done_test(void **state)
     dictionary_done(dict);
 }
 
+/**
+ * Testuje wstawianie słów do słownika.
+ */
 static void dictionary_insert_test(void **state)
 {
     struct dictionary *dict = dictionary_new();
@@ -41,6 +51,9 @@ static void dictionary_insert_test(void **state)
     dictionary_done(dict);
 }
 
+/**
+ * Testuje usuwanie słów ze słownika.
+ */
 static void dictionary_delete_test(void **state)
 {
     struct dictionary *dict = dictionary_new();
@@ -50,6 +63,9 @@ static void dictionary_delete_test(void **state)
     dictionary_done(dict);
 }
 
+/**
+ * Testuje znajdowanie słów w słowniku.
+ */
 static void dictionary_find_test(void **state)
 {
     struct dictionary *dict = dictionary_new();
@@ -59,6 +75,9 @@ static void dictionary_find_test(void **state)
     dictionary_done(dict);
 }
 
+/**
+ * Testuje znajdowanie podpowiedzi w słowniku.
+ */
 static void dictionary_hints_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF-8");

@@ -1,3 +1,14 @@
+/** @file
+  Test implementacji word_list.
+  
+  @ingroup dictionary
+  @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
+          
+  @copyright Uniwerstet Warszawski
+  @date 2015-05-31
+ */
+
+
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -10,6 +21,9 @@ const wchar_t* first  = L"First string";
 const wchar_t* second = L"Second string";
 const wchar_t* third  = L"Third string";
 
+/**
+ * Testuje tworzenie i usuwanie listy słów.
+ */
 static void word_list_init_test(void** state) {
     struct word_list l;
     word_list_init(&l);
@@ -17,6 +31,9 @@ static void word_list_init_test(void** state) {
     word_list_done(&l);
 }
 
+/**
+ * Testuje dodawanie słów do listy.
+ */
 static void word_list_add_test(void** state) {
     struct word_list l;
     word_list_init(&l);
@@ -26,7 +43,9 @@ static void word_list_add_test(void** state) {
     word_list_done(&l);
 }
 
-
+/**
+ * Tworzy przykładowe środowisko.
+ */
 static int word_list_setup(void **state) {
     struct word_list *l = malloc(sizeof(struct word_list));
     if (!l) 
@@ -38,6 +57,9 @@ static int word_list_setup(void **state) {
     *state = l;
     return 0;
 }
+/**
+ * Usuwa przykładowe środowisko.
+ */
 static int word_list_teardown(void **state) {
     struct word_list *l = *state;
     word_list_done(l);
@@ -45,6 +67,9 @@ static int word_list_teardown(void **state) {
     return 0;
 }
 
+/**
+ * Testuje zwracanie listy słów ze listy słów.
+ */
 static void word_list_get_test(void** state) {
     struct word_list *l = *state;
     assert_true(wcscmp(first, word_list_get(l)[0]) == 0);
@@ -52,6 +77,9 @@ static void word_list_get_test(void** state) {
     assert_true(wcscmp(third, word_list_get(l)[2]) == 0);
 }
 
+/**
+ * Testuje wielokrotne wstawianie tego samego słowa do listy słów.
+ */
 static void word_list_repeat_test(void** state) {
     struct word_list *l = *state;
     word_list_add(l, third);

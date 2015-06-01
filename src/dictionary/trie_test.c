@@ -1,3 +1,13 @@
+/** @file
+  Test implementacji drzewa TRIE.
+  
+  @ingroup dictionary
+  @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
+          
+  @copyright Uniwerstet Warszawski
+  @date 2015-05-31
+ */
+
 #include <stdlib.h>
 #include <locale.h>
 #include <string.h>
@@ -9,13 +19,7 @@
 #include "trie.h"
 #include "charmap.h"
 #include "word_list.h"
-
-#ifdef free
-#undef free
-#endif /* free */
-#define free(ptr) _test_free(ptr, __FILE__, __LINE__)
-void _test_free(void* const ptr, const char* file, const int line);
-
+#include "../testable.h"
 
 /**
  * Reprezentuje węzeł drzewa TRIE.
@@ -45,6 +49,9 @@ extern void trie_hints_helper(struct trie_node *node, const wchar_t *word,
                        wchar_t **created, int length, int *capacity,
                        int points, struct word_list *list);
 
+/**
+ * Testuje tworzenie i usuwanie drzewa.
+ */
 static void trie_init_done_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -54,12 +61,18 @@ static void trie_init_done_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Tworzy środowisko z jednym węzłem.
+ */
 static int node_0_setup(void **state)
 {
     *state = trie_init();
     return 0;
 }
 
+/**
+ * Tworzy środowisko z węzłem mającym jedno dziecko.
+ */
 static int node_1_setup(void **state)
 {
     struct trie_node *node = trie_init();
@@ -80,6 +93,9 @@ static int node_1_setup(void **state)
     return 0;
 }
 
+/**
+ * Tworzy środowisko z węzłem mającym dwoje dzieci.
+ */
 static int node_2_setup(void **state)
 {
     struct trie_node *node = trie_init();
@@ -101,6 +117,9 @@ static int node_2_setup(void **state)
     return 0;
 }
 
+/**
+ * Tworzy środowisko z węzłem mającym czwórkę dzieci.
+ */
 static int node_4_setup(void **state)
 {
     struct trie_node *node = trie_init();
@@ -124,6 +143,9 @@ static int node_4_setup(void **state)
     return 0;
 }
 
+/**
+ * Usuwa środowisko z jednym węzłem.
+ */
 static int node_0_teardown(void **state)
 {
     struct trie_node *node = *state;
@@ -133,6 +155,9 @@ static int node_0_teardown(void **state)
     return 0;
 }
 
+/**
+ * Usuwa środowisko z węzłem mającym jedno dziecko.
+ */
 static int node_1_teardown(void **state)
 {
     struct trie_node *node = *state;
@@ -147,6 +172,9 @@ static int node_1_teardown(void **state)
     return 0;
 }
 
+/**
+ * Usuwa środowisko z węzłem mającym dwójkę dzieci.
+ */
 static int node_2_teardown(void **state)
 {
     struct trie_node *node = *state;
@@ -161,6 +189,9 @@ static int node_2_teardown(void **state)
     return 0;
 }
 
+/**
+ * Usuwa środowisko z węzłem mającym czwórkę dzieci.
+ */
 static int node_4_teardown(void **state)
 {
     struct trie_node *node = *state;
@@ -175,18 +206,30 @@ static int node_4_teardown(void **state)
     return 0;
 }
 
+/**
+ * Testuje pobranie indeksu, gdzie powinien się znaleźć syn
+ * o danej etykiecie na pojedynczym węźle.
+ */
 static void trie_get_child_index_empty_test(void **state)
 {
     struct trie_node *node = *state;
     assert_int_equal(trie_get_child_index(node, L'a',0,0), -1);
 }
 
+/**
+ * Testuje pobranie indeksu, gdzie powinien się znaleźć syn
+ * o danej etykiecie na węźle z jednym dzieckiem.
+ */
 static void trie_get_child_index_1_test(void **state)
 {
     struct trie_node *node = *state;
     assert_int_equal(trie_get_child_index(node, L'c',0,1), 0);
 }
 
+/**
+ * Testuje pobranie indeksu, gdzie powinien się znaleźć syn
+ * o danej etykiecie na węźle z dwoma dziećmi.
+ */
 static void trie_get_child_index_2_test(void **state)
 {
     struct trie_node *node = *state;
@@ -207,6 +250,10 @@ static void trie_get_child_index_2_test(void **state)
     assert_int_equal(trie_get_child_index(node, L'z',0,2), 2);
 }
 
+/**
+ * Testuje pobranie indeksu, gdzie powinien się znaleźć syn
+ * o danej etykiecie na węźle z czterema dziećmi.
+ */
 static void trie_get_child_index_4_test(void **state)
 {
     struct trie_node *node = *state;
@@ -347,12 +394,20 @@ static void trie_get_child_index_4_test(void **state)
     assert_int_equal(trie_get_child_index(node, L'z',4,4), 4);
 }
 
+/**
+ * Testuje pobranie dziecka o danej etykiecie
+ * na pojedynczym węźle.
+ */
 static void trie_get_child_empty_test(void **state)
 {
     struct trie_node *node = *state;
     assert_true(trie_get_child(node, L'a') == NULL);
 }
 
+/**
+ * Testuje pobranie dziecka o danej etykiecie
+ * na węźle z jednym dzieckiem.
+ */
 static void trie_get_child_1_test(void **state)
 {
     struct trie_node *node = *state;
@@ -361,6 +416,10 @@ static void trie_get_child_1_test(void **state)
     assert_true(trie_get_child(node, L'k') == NULL);
 }
 
+/**
+ * Testuje pobranie dziecka o danej etykiecie
+ * na węźle z dwoma dziećmi.
+ */
 static void trie_get_child_2_test(void **state)
 {
     struct trie_node *node = *state;
@@ -371,6 +430,10 @@ static void trie_get_child_2_test(void **state)
     assert_true(trie_get_child(node, L'u') == NULL);
 }
 
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na pojedynczym węźle.
+ */
 static void trie_get_child_or_add_empty_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -382,6 +445,11 @@ static void trie_get_child_or_add_empty_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na węźle z jednym dzieckiem.
+ * Zostanie dodane dziecko przed już istniejącym dzieckiem.
+ */
 static void trie_get_child_or_add_1A_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -396,6 +464,11 @@ static void trie_get_child_or_add_1A_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na węźle z jednym dzieckiem.
+ * Zostanie zwrócone istniejące dziecko.
+ */
 static void trie_get_child_or_add_1B_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -408,6 +481,12 @@ static void trie_get_child_or_add_1B_test(void **state)
     assert_true(child == c1);
     trie_done(node);
 }
+
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na węźle z jednym dzieckiem.
+ * Zostanie dodane dziecko po już istniejącym dziecku.
+ */
 static void trie_get_child_or_add_1C_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -422,6 +501,11 @@ static void trie_get_child_or_add_1C_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na węźle z dwoma dziećmi.
+ * Zostanie dodane dziecko przed już istniejącymi dziećmi.
+ */
 static void trie_get_child_or_add_2A_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -437,6 +521,11 @@ static void trie_get_child_or_add_2A_test(void **state)
     assert_true(child->val == L'a');
     trie_done(node);
 }
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na węźle z dwoma dziećmi.
+ * Zostanie zwrócone pierwsze dziecko.
+ */
 static void trie_get_child_or_add_2B_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -452,6 +541,11 @@ static void trie_get_child_or_add_2B_test(void **state)
     assert_true(child->val == L'd');
     trie_done(node);
 }
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na węźle z dwoma dziećmi.
+ * Zostanie dodane dziecko pomiędzy istniejącymi dziećmi.
+ */
 static void trie_get_child_or_add_2C_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -467,6 +561,11 @@ static void trie_get_child_or_add_2C_test(void **state)
     assert_true(child->val == L'h');
     trie_done(node);
 }
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na węźle z dwoma dziećmi.
+ * Zostanie zwrócone drugie istniejące dziecko.
+ */
 static void trie_get_child_or_add_2D_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -482,6 +581,11 @@ static void trie_get_child_or_add_2D_test(void **state)
     assert_true(child->val == L's');
     trie_done(node);
 }
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na węźle z dwoma dziećmi.
+ * Zostanie dodane dziecko po drugim istniejącym dziecku.
+ */
 static void trie_get_child_or_add_2E_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -497,6 +601,11 @@ static void trie_get_child_or_add_2E_test(void **state)
     assert_true(child->val == L'w');
     trie_done(node);
 }
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na węźle z trójką dzieci.
+ * Zostanie dodane dziecko pomiędzy pierwsze a drugie dziecko.
+ */
 static void trie_get_child_or_add_3_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -515,6 +624,12 @@ static void trie_get_child_or_add_3_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje pobranie lub dodanie dziecka o danej etykiecie
+ * na węźle z czterema dziećmi.
+ * Zostanie dodane dziecko pomiędzy drugie a trzecie dziecko.
+ * Nastąpi powiększenie tablicy dzieci.
+ */
 static void trie_get_child_or_add_4copy_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -535,6 +650,11 @@ static void trie_get_child_or_add_4copy_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje czyszczenie drzewa (root)->(h)->(p) bez żadnych liści
+ * na poziomie (root)->(h).
+ * Nic nie zostanie zmienione, bo (h) ma dziecko.
+ */
 static void trie_cleanup_11_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -550,6 +670,11 @@ static void trie_cleanup_11_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje czyszczenie drzewa (root)->(h) z liściem w (h)
+ * na poziomie (root)->(h).
+ * Nic nie zostanie zmienione, bo (h) jest liściem.
+ */
 static void trie_cleanup_1_leaf_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -564,6 +689,13 @@ static void trie_cleanup_1_leaf_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje czyszczenie drzewa (root)->(h) bez żadnych liści
+ * na poziomie (root)->(h).
+ * Zostanie usunięte jedyne dziecko (root),
+ * bo nie jest liściem i nie ma dzieci.
+ * Tablica dzieci w (root) zostanie usunięta.
+ */
 static void trie_cleanup_1_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -576,6 +708,12 @@ static void trie_cleanup_1_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje czyszczenie drzewa (root)->(h),(q) bez żadnych liści
+ * na poziomie (root)->(h).
+ * Zostanie usunięte (h), bo nie jest liściem i nie ma dzieci,
+ * a (root) będzie miał tylko jedno dziecko.
+ */
 static void trie_cleanup_2A_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -589,6 +727,12 @@ static void trie_cleanup_2A_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje czyszczenie drzewa (root)->(h),(q) bez żadnych liści
+ * na poziomie (root)->(q).
+ * Zostanie usunięte (q), bo nie jest liściem i nie ma dzieci,
+ * a (root) będzie miał tylko jedno dziecko.
+ */
 static void trie_cleanup_2B_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -602,6 +746,14 @@ static void trie_cleanup_2B_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje czyszczenie drzewa (root)->(b),(d),(f),(h),(j),(l),(n),(p) bez żadnych liści
+ * na poziomie kolejno (root)->(l), (root)->(d), (root)->(n), (root)->(b), (root)->(p),
+ * (root)->(h), (root)->(f).
+ * Zostanią usunięte (b),(d),(f),(h),(l),(n),(p), bo nie są liśćmi i nie mają dzieci,
+ * a (root) będzie miał tylko jedno dziecko.
+ * Przy ostatnim clean-up'ie tablica dzieci (root)'a zostanie skrócona do 4 elementów.
+ */
 static void trie_cleanup_8_shrink_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -635,6 +787,11 @@ static void trie_cleanup_8_shrink_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję pomocniczą usuwania słowa na drzewie (root)->(h) bez liści
+ * podając do usunięcia puste słowo.
+ * Nic się nie stanie, bo (h) nie jest liściem.
+ */
 static void trie_delete_helper_1_noleaf_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -645,6 +802,11 @@ static void trie_delete_helper_1_noleaf_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję pomocniczą usuwania słowa na drzewie (root)->(h)->(w)
+ * z liściem w (h) podając do usunięcia puste słowo.
+ * Węzeł (h) przestanie być liściem.
+ */
 static void trie_delete_helper_11_leaf_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -660,6 +822,11 @@ static void trie_delete_helper_11_leaf_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję pomocniczą usuwania słowa na drzewie (root)->(h) bez liści
+ * podając do usunięcia słowo "x".
+ * Nic się nie stanie, bo (h) nie ma dziecka o etykiecie 'x'.
+ */
 static void trie_delete_helper_1_nochild_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -670,6 +837,11 @@ static void trie_delete_helper_1_nochild_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję pomocniczą usuwania słowa na drzewie (root)->(h)->(w)
+ * z liściem w (w) podając do usunięcia słowo "w".
+ * Dziecko (root) zostanie usunięte.
+ */
 static void trie_delete_helper_11_leaf_A_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -681,6 +853,9 @@ static void trie_delete_helper_11_leaf_A_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje wypełnianie mapy znaków znakami z drzewa na pojedynczym węźle.
+ */
 static void trie_fill_charmap_root_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -703,6 +878,10 @@ static void trie_fill_charmap_root_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje wypełnianie mapy znaków znakami z drzewa
+ * na węźle z pojedynczym dzieckiem.
+ */
 static void trie_fill_charmap_1_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -729,71 +908,77 @@ static void trie_fill_charmap_1_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje wypisywanie skróconej instrukcji przejścia do praprapradziadka
+ * dla formatu dictA.
+ */
 static void trie_serialize_formatA_ender_1_test(void **state)
 {
-    unsigned char buff[8];
-    buff[0] = 0;
-    buff[1] = 0;
-    FILE * file = fmemopen(buff, 8, "w");
-    trie_serialize_formatA_ender(5, 42, 8, file);
-    fclose(file);
+    writep = 0;
+    trie_serialize_formatA_ender(5, 42, 8, NULL);
     assert_int_equal(buff[0], 55);
-    assert_int_equal(buff[1], 0);
+    assert_int_equal(writep, 1);
 }
 
+/**
+ * Testuje wypisywanie pełnej sekwencji instrukcji przejścia do (34-pra)dziadka
+ * dla formatu dictA.
+ */
 static void trie_serialize_formatA_ender_2_test(void **state)
 {
-    unsigned char buff[8];
-    buff[0] = 0;
-    buff[1] = 0;
-    buff[2] = 0;
-    FILE * file = fmemopen(buff, 8, "w");
-    trie_serialize_formatA_ender(36, 242, 8, file);
-    fclose(file);
+    writep = 0;
+    trie_serialize_formatA_ender(36, 242, 8, NULL);
     assert_int_equal(buff[0], 245);
     assert_int_equal(buff[1], 248);
-    assert_int_equal(buff[2], 0);
+    assert_int_equal(writep, 2);
 }
 
+/**
+ * Testuje funkcję pomocniczą zapisującą drzewo (a)
+ * dla formatu dictA.
+ */
 static void trie_serialize_formatA_helper_root_test(void **state)
 {
+    writep = 0;
     struct trie_node *node = trie_init();
     node->val = L'a';
     struct char_map *map = char_map_init();
     char_map_put(map, L'a', 5);
-    unsigned char buff[8];
-    memset(buff, 0, 8);
-    FILE * file = fmemopen(buff, 8, "w");
-    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, file), 1);
-    fclose(file);
+    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, NULL), 1);
     assert_int_equal(buff[0], 5);
-    assert_int_equal(buff[1], 0);
+    assert_int_equal(writep, 1);
     char_map_done(map);
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję pomocniczą zapisującą drzewo (k)->(n)
+ * dla formatu dictA.
+ */
 static void trie_serialize_formatA_helper_1_test(void **state)
 {
+    writep = 0;
     struct trie_node *node = trie_init();
     node->val = L'k';
     struct trie_node *child = trie_get_child_or_add_empty(node, L'n');
     struct char_map *map = char_map_init();
     char_map_put(map, L'k', 5);
     char_map_put(map, L'n', 9);
-    unsigned char buff[8];
-    memset(buff, 0, 8);
-    FILE * file = fmemopen(buff, 8, "w");
-    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, file), 2);
-    fclose(file);
+    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, NULL), 2);
     assert_int_equal(buff[0], 5);
     assert_int_equal(buff[1], 9);
-    assert_int_equal(buff[2], 0);
+    assert_int_equal(writep, 2);
     char_map_done(map);
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję pomocniczą zapisującą drzewo [k]->(n), gdzie k jest liściem
+ * dla formatu dictA.
+ */
 static void trie_serialize_formatA_helper_1_leaf_test(void **state)
 {
+    writep = 0;
     struct trie_node *node = trie_init();
     node->val = L'k';
     node->leaf = 1;
@@ -801,21 +986,22 @@ static void trie_serialize_formatA_helper_1_leaf_test(void **state)
     struct char_map *map = char_map_init();
     char_map_put(map, L'k', 5);
     char_map_put(map, L'n', 9);
-    unsigned char buff[8];
-    memset(buff, 0, 8);
-    FILE * file = fmemopen(buff, 8, "w");
-    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, file), 2);
-    fclose(file);
+    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, NULL), 2);
     assert_int_equal(buff[0], 5);
     assert_int_equal(buff[1], 12);
     assert_int_equal(buff[2], 9);
-    assert_int_equal(buff[3], 0);
+    assert_int_equal(writep, 3);
     char_map_done(map);
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję pomocniczą zapisującą drzewo (k)->(n),(t)
+ * dla formatu dictA
+ */
 static void trie_serialize_formatA_helper_2_test(void **state)
 {
+    writep = 0;
     struct trie_node *node = trie_init();
     node->val = L'k';
     struct trie_node *c1 = trie_get_child_or_add_empty(node, L'n');
@@ -824,22 +1010,22 @@ static void trie_serialize_formatA_helper_2_test(void **state)
     char_map_put(map, L'k', 5);
     char_map_put(map, L'n', 9);
     char_map_put(map, L't', 2);
-    unsigned char buff[8];
-    memset(buff, 0, 8);
-    FILE * file = fmemopen(buff, 8, "w");
-    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, file), 2);
-    fclose(file);
+    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, NULL), 2);
     assert_int_equal(buff[0], 5);
     assert_int_equal(buff[1], 9);
     assert_int_equal(buff[2], 21);
     assert_int_equal(buff[3], 2);
-    assert_int_equal(buff[4], 0);
+    assert_int_equal(writep, 4);
     char_map_done(map);
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję zapisującą drzewo (k)->(n),(t) w formacie dictA.
+ */
 static void trie_serialize_formatA_test(void **state)
 {
+    writep = 0;
     struct trie_node *node = trie_init();
     node->val = L'k';
     struct trie_node *c1 = trie_get_child_or_add_empty(node, L'n');
@@ -870,25 +1056,24 @@ static void trie_serialize_formatA_test(void **state)
     trans[9] = L'n';
     trans[10] = L'h';
     trans[11] = L'i';
-    unsigned char buff[64];
-    memset(buff, 0, 64);
-    FILE * file = fmemopen(buff, 64, "w");
     char *output = "dictA\x0c\x08\x00\x00\x00\x0c""abtcdkefgnhi\x09\x15\x02\x15\x0d";
-    trie_serialize_formatA(node, map, trans, 8, file);
-    fclose(file);
+    trie_serialize_formatA(node, map, trans, 8, NULL);
     assert_memory_equal(buff, output, 28);
-    assert_int_equal(buff[28], 0);
+    assert_int_equal(writep, 28);
     char_map_done(map);
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję pomocniczą wczytującą drzewo (root)->(t) w formacie dictA.
+ */
 static void trie_deserialize_formatA_helper_1_test(void **state)
 {
     struct trie_node *node = trie_init();
-    unsigned char buff[64];
-    memset(buff, 0, 64);
     buff[0] = 2;
     buff[1] = 22;
+    readp = 0;
+    filelen = 2;
     wchar_t trans[256];
     trans[0] = L'a';
     trans[1] = L'b';
@@ -902,9 +1087,7 @@ static void trie_deserialize_formatA_helper_1_test(void **state)
     trans[9] = L'n';
     trans[10] = L'h';
     trans[11] = L'i';
-    FILE * file = fmemopen(buff, 64, "r");
-    assert_int_equal(trie_deserialize_formatA_helper(node, 12, 8, trans, file), 0);
-    fclose(file);
+    assert_int_equal(trie_deserialize_formatA_helper(node, 12, 8, trans, NULL), 0);
     assert_int_equal(node->cnt, 1);
     assert_int_equal(node->leaf, 0);
     assert_true(node->chd[0]->val == L't');
@@ -913,15 +1096,18 @@ static void trie_deserialize_formatA_helper_1_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję pomocniczą wczytującą drzewo (root)->(t)->(k) w formacie dictA.
+ */
 static void trie_deserialize_formatA_helper_2_test(void **state)
 {
     struct trie_node *node = trie_init();
-    unsigned char buff[64];
-    memset(buff, 0, 64);
     buff[0] = 2;
     buff[1] = 12;
     buff[2] = 5;
     buff[3] = 25;
+    readp = 0;
+    filelen = 4;
     wchar_t trans[256];
     trans[0] = L'a';
     trans[1] = L'b';
@@ -935,9 +1121,7 @@ static void trie_deserialize_formatA_helper_2_test(void **state)
     trans[9] = L'n';
     trans[10] = L'h';
     trans[11] = L'i';
-    FILE * file = fmemopen(buff, 64, "r");
-    assert_int_equal(trie_deserialize_formatA_helper(node, 12, 8, trans, file), 2);
-    fclose(file);
+    assert_int_equal(trie_deserialize_formatA_helper(node, 12, 8, trans, NULL), 2);
     assert_int_equal(node->cnt, 1);
     assert_int_equal(node->leaf, 0);
     assert_true(node->chd[0]->val == L't');
@@ -949,17 +1133,20 @@ static void trie_deserialize_formatA_helper_2_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję pomocniczą wczytującą drzewo (root)->(t)->(k)->(n)->(k) w formacie dictA.
+ */
 static void trie_deserialize_formatA_helper_3_test(void **state)
 {
     struct trie_node *node = trie_init();
-    unsigned char buff[64];
-    memset(buff, 0, 64);
     buff[0] = 2;
     buff[1] = 5;
     buff[2] = 9;
     buff[3] = 5;
     buff[4] = 13;
     buff[5] = 15;
+    readp = 0;
+    filelen = 6;
     wchar_t trans[256];
     trans[0] = L'a';
     trans[1] = L'b';
@@ -973,9 +1160,7 @@ static void trie_deserialize_formatA_helper_3_test(void **state)
     trans[9] = L'n';
     trans[10] = L'h';
     trans[11] = L'i';
-    FILE * file = fmemopen(buff, 64, "r");
-    assert_int_equal(trie_deserialize_formatA_helper(node, 12, 8, trans, file), 0);
-    fclose(file);
+    assert_int_equal(trie_deserialize_formatA_helper(node, 12, 8, trans, NULL), 0);
     assert_int_equal(node->cnt, 1);
     assert_int_equal(node->leaf, 0);
     assert_true(node->chd[0]->val == L't');
@@ -993,14 +1178,16 @@ static void trie_deserialize_formatA_helper_3_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję wczytującą drzewo (root)->(n),(t) w formacie dictA.
+ */
 static void trie_deserialize_fromatA_test(void **state)
 {
-    unsigned char buff[64];
     char *output = "\x0c\x08\x00\x00\x00\x0c""abtcdkefgnhi\x09\x15\x02\x15\x0d";
     memcpy(buff, output, 29);
-    FILE * file = fmemopen(buff, 64, "r");
-    struct trie_node *node = trie_deserialize_formatA(file);
-    fclose(file);
+    readp = 0;
+    filelen = 29;
+    struct trie_node *node = trie_deserialize_formatA(NULL);
     assert_int_equal(node->cnt, 2);
     assert_int_equal(node->leaf, 0);
     assert_int_equal(node->chd[0]->cnt, 0);
@@ -1012,6 +1199,10 @@ static void trie_deserialize_fromatA_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję dbającą o długość stringu do którego piszemy.
+ * Nic nie powinno się stać.
+ */
 static void fix_size_1_test(void **state)
 {
     wchar_t *str = malloc(4*sizeof(wchar_t));
@@ -1024,6 +1215,10 @@ static void fix_size_1_test(void **state)
     free(str);
 }
 
+/**
+ * Testuje funkcję dbającą o długość stringu do którego piszemy.
+ * Bufor powinien zostać zrealokowany, a jego rozmiar podwojony.
+ */
 static void fix_size_2_test(void **state)
 {
     wchar_t *str = malloc(4*sizeof(wchar_t));
@@ -1038,6 +1233,10 @@ static void fix_size_2_test(void **state)
     free(str);
 }
 
+/**
+ * Testuje funkcję pomocniczą liczącą podpowiedzi na drzewie [root]
+ * z liściem w [root] bez dozwolonych zmian z wzorcem "".
+ */
 static void trie_hints_helper_nochange_1_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1054,6 +1253,10 @@ static void trie_hints_helper_nochange_1_test(void **state)
     trie_done(node);
     free(created);
 }
+/**
+ * Testuje funkcję pomocniczą liczącą podpowiedzi na drzewie (root)->[f]
+ * z liściem w [f] bez dozwolonych zmian z wzorcem "f".
+ */
 static void trie_hints_helper_nochange_2_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1072,6 +1275,10 @@ static void trie_hints_helper_nochange_2_test(void **state)
     free(created);
 }
 
+/**
+ * Testuje funkcję pomocniczą liczącą podpowiedzi na drzewie [root]
+ * z liściem w [root] z dozwoloną zmianą z wzorcem "".
+ */
 static void trie_hints_helper_change_NC1_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1088,6 +1295,11 @@ static void trie_hints_helper_change_NC1_test(void **state)
     trie_done(node);
     free(created);
 }
+
+/**
+ * Testuje funkcję pomocniczą liczącą podpowiedzi na drzewie (root)->[f]
+ * z liściem w [f] z dozwoloną zmianą z wzorcem "f".
+ */
 static void trie_hints_helper_change_NC2_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1106,6 +1318,10 @@ static void trie_hints_helper_change_NC2_test(void **state)
     free(created);
 }
 
+/**
+ * Testuje funkcję pomocniczą liczącą podpowiedzi na drzewie (root)->[f]
+ * z liściem w [f] z dozwoloną zmianą z wzorcem "".
+ */
 static void trie_hints_helper_change_1_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1124,6 +1340,10 @@ static void trie_hints_helper_change_1_test(void **state)
     free(created);
 }
 
+/**
+ * Testuje funkcję pomocniczą liczącą podpowiedzi na drzewie (root)->[f]
+ * z liściem w [f] z dozwoloną zmianą z wzorcem "x".
+ */
 static void trie_hints_helper_change_2_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1142,6 +1362,10 @@ static void trie_hints_helper_change_2_test(void **state)
     free(created);
 }
 
+/**
+ * Testuje funkcję pomocniczą liczącą podpowiedzi na drzewie (root)->[f]
+ * z liściem w [f] z dozwoloną zmianą z wzorcem "f".
+ */
 static void trie_hints_helper_change_3_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1160,6 +1384,9 @@ static void trie_hints_helper_change_3_test(void **state)
     free(created);
 }
 
+/**
+ * Testuje funkcję usuwającą zawartość drzewa na pojedynczym węźle.
+ */
 static void trie_clear_1_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1168,6 +1395,9 @@ static void trie_clear_1_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję usuwającą zawartość drzewa na drzewie (root)->((f)->(d),(s)),((p)->(b))
+ */
 static void trie_clear_2_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1181,6 +1411,9 @@ static void trie_clear_2_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję wstawiającą element do drzewa dla (root) i słowa "x".
+ */
 static void trie_insert_1_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1192,6 +1425,10 @@ static void trie_insert_1_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję wstawiającą element do drzewa dla (root)->(f) i słowa "f".
+ * (f) nie jest liściem.
+ */
 static void trie_insert_2_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1204,6 +1441,10 @@ static void trie_insert_2_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję wstawiającą element do drzewa dla (root)->[f] i słowa "f".
+ * [f] jest liściem.
+ */
 static void trie_insert_3_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1217,6 +1458,9 @@ static void trie_insert_3_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję wstawiającą element do drzewa dla (root)->(f) i słowa "fl".
+ */
 static void trie_insert_4_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1232,6 +1476,9 @@ static void trie_insert_4_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję zajdującą dla drzewa (root) i słowa "".
+ */
 static void trie_find_1_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1239,6 +1486,9 @@ static void trie_find_1_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję zajdującą dla drzewa [root] i słowa "".
+ */
 static void trie_find_2_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1247,6 +1497,9 @@ static void trie_find_2_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję zajdującą dla drzewa (root) i słowa "n".
+ */
 static void trie_find_3_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1254,6 +1507,9 @@ static void trie_find_3_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję zajdującą dla drzewa (root)->(f) i słowa "f".
+ */
 static void trie_find_4_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1262,6 +1518,9 @@ static void trie_find_4_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję zajdującą dla drzewa (root)->[f] i słowa "f".
+ */
 static void trie_find_5_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1271,6 +1530,9 @@ static void trie_find_5_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję usuwającą dla drzewa (root) i słowa "e".
+ */
 static void trie_delete_1_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1278,6 +1540,9 @@ static void trie_delete_1_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję usuwającą dla drzewa (root)->(f) i słowa "f".
+ */
 static void trie_delete_2_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1286,6 +1551,9 @@ static void trie_delete_2_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję usuwającą dla drzewa (root)->[f] i słowa "f".
+ */
 static void trie_delete_3_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1295,6 +1563,9 @@ static void trie_delete_3_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję zapisującą drzewo dla {gl, gr, p}.
+ */
 static void trie_serialize_test(void **state)
 {
     struct trie_node *node = trie_init();
@@ -1302,24 +1573,24 @@ static void trie_serialize_test(void **state)
     trie_insert(node, L"gl");
     trie_insert(node, L"gr");
     char *output = "dictA\x04\x01\x00\x00\x00\x04""glrp\x00\x01\x06\x02\x07\x03\x06\x05";
-    unsigned char buff[64];
-    memset(buff, 0, 64);
-    FILE * file = fmemopen(buff, 64, "w");
-    trie_serialize(node, file);
-    fclose(file);
+    writep = 0;
+    trie_serialize(node, NULL);
     assert_memory_equal(buff, output, 23);
     trie_done(node);
 }
 
+
+/**
+ * Testuje funkcję wczytujące drzewo {gl, gr, p}.
+ */
 static void trie_deserialize_test(void **state)
 {
     char *output = "dictA\x04\x01\x00\x00\x00\x04""glrp\x00\x01\x06\x02\x07\x03\x06\x05";
     unsigned char buff[64];
-    memset(buff, 0, 64);
     memcpy(buff, output, 23);
-    FILE * file = fmemopen(buff, 64, "r");
-    struct trie_node * node = trie_deserialize(file);
-    fclose(file);
+    readp = 0;
+    filelen = 23;
+    struct trie_node * node = trie_deserialize(NULL);
     assert_int_equal(node->cnt, 2);
     assert_int_equal(node->chd[0]->val, L'g');
     assert_int_equal(node->chd[0]->cnt, 2);
@@ -1338,6 +1609,9 @@ static void trie_deserialize_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje funkcję liczącą podpowiedzi.
+ */
 static void trie_hints_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF-8");

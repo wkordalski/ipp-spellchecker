@@ -1,3 +1,13 @@
+/** @file
+  Test implementacji charmap'y.
+  
+  @ingroup dictionary
+  @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
+          
+  @copyright Uniwerstet Warszawski
+  @date 2015-05-31
+ */
+
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -10,6 +20,9 @@ extern int char_map_bucket_size(struct char_map *map, int bucket);
 
 const wchar_t sample_bucket[] = { L'a', L'n', L'o', L'r' };
 
+/**
+ * Testuje funkcję znajdującą wpis odpowiadający danej literze w koszyku.
+ */
 static void char_map_get_position_in_bucket_tests(void **state)
 {
     // begin == end
@@ -27,7 +40,9 @@ static void char_map_get_position_in_bucket_tests(void **state)
     assert_int_equal(char_map_get_position_in_bucket(sample_bucket, L'o', 0, 4), 2);
     assert_int_equal(char_map_get_position_in_bucket(sample_bucket, L'r', 0, 4), 3);
 }
-
+/**
+ * Testuje tworzenie nowej char-mapy.
+ */
 static void char_map_init_tests(void **state)
 {
     struct char_map *map = char_map_init();
@@ -39,7 +54,9 @@ static void char_map_init_tests(void **state)
     }
     char_map_done(map);
 }
-
+/**
+ * Testuje wstawianie elementu do mapy.
+ */
 static void char_map_put_tests(void **state)
 {
     struct char_map *map = char_map_init();
@@ -59,6 +76,9 @@ static void char_map_put_tests(void **state)
     char_map_done(map);
 }
 
+/**
+ * Tworzy przykładowe środowisko.
+ */
 static int char_map_setup(void ** state)
 {
     struct char_map *map = char_map_init();
@@ -70,7 +90,9 @@ static int char_map_setup(void ** state)
     *state = map;
     return 0;
 }
-
+/**
+ * Usuwa przykładowe środowisko.
+ */
 static int char_map_teardown(void **state)
 {
     struct char_map *map = *state;
@@ -78,6 +100,9 @@ static int char_map_teardown(void **state)
     return 0;
 }
 
+/**
+ * Testuje znajdowanie powiązania w mapie.
+ */
 static void char_map_get_test(void **state)
 {
     struct char_map *map = *state;
@@ -88,6 +113,9 @@ static void char_map_get_test(void **state)
     assert_false(char_map_get(map, L'a'+char_map_capacity(), &val));
 }
 
+/**
+ * Testuje funkcję zwracającą rozmiar mapy.
+ */
 static void char_map_size_test(void **state)
 {
     struct char_map *map = *state;
