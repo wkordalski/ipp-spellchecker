@@ -63,13 +63,6 @@ static int char_map_get_position_in_bucket(const wchar_t const *bucket, wchar_t 
     else return char_map_get_position_in_bucket(bucket, key, middle + 1, end);
 }
 
-static int char_map_bucket_size(struct char_map *map, int bucket)
-{
-    assert(map != NULL);
-    assert(bucket < char_map_capacity());
-    return map->counts[bucket];
-}
-
 /**
  * @}
  */

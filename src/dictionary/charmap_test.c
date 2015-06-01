@@ -15,6 +15,20 @@
 #include <cmocka.h>
 #include "charmap.h"
 
+/** Pojemność char-mapy */
+#define CHAR_MAP_CAPACITY 256
+
+/**
+ * Reprezentuje char-mapę.
+ */
+struct char_map
+{
+    int count;                                          ///< Ilość elementów w mapie
+    int counts[CHAR_MAP_CAPACITY];                      ///< Ilość elementów w koszykach
+    wchar_t keys[CHAR_MAP_CAPACITY][CHAR_MAP_CAPACITY]; ///< Elementy w mapie
+    char values[CHAR_MAP_CAPACITY][CHAR_MAP_CAPACITY];  ///< Wartości przypisane elementom mapy.
+};
+
 extern int char_map_get_position_in_bucket(const wchar_t const *bucket, wchar_t key, int begin, int end);
 extern int char_map_bucket_size(struct char_map *map, int bucket);
 
@@ -50,7 +64,7 @@ static void char_map_init_tests(void **state)
     assert_int_equal(char_map_size(map), 0);
     for(int i = 0; i < char_map_capacity(); i++)
     {
-        assert_int_equal(char_map_bucket_size(map,i), 0);
+        assert_int_equal(map->counts[i], 0);
     }
     char_map_done(map);
 }
@@ -63,15 +77,15 @@ static void char_map_put_tests(void **state)
     assert_true(map != NULL);
     assert_true(char_map_put(map, L'a'+char_map_capacity(), 'a'));
     assert_false(char_map_put(map, L'a'+char_map_capacity(), 'a'));
-    assert_int_equal(char_map_bucket_size(map, L'a'%char_map_capacity()), 1);
+    assert_int_equal(map->counts[L'a'%char_map_capacity()], 1);
     assert_true(char_map_put(map, L'a'+2*char_map_capacity(), 'b'));
-    assert_int_equal(char_map_bucket_size(map, L'a'%char_map_capacity()), 2);
+    assert_int_equal(map->counts[L'a'%char_map_capacity()], 2);
     assert_true(char_map_put(map, L'a', 'c'));
-    assert_int_equal(char_map_bucket_size(map, L'a'%char_map_capacity()), 3);
+    assert_int_equal(map->counts[L'a'%char_map_capacity()], 3);
     for(int i = 0; i < char_map_capacity(); i++)
     {
         if(i != L'a'%char_map_capacity())
-            assert_int_equal(char_map_bucket_size(map,i), 0);
+            assert_int_equal(map->counts[i], 0);
     }
     char_map_done(map);
 }

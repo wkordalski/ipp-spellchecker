@@ -886,7 +886,7 @@ static void trie_fill_charmap_1_test(void **state)
 {
     struct trie_node *node = trie_init();
     node->val = L'v';
-    struct trie_node *chd = trie_get_child_or_add_empty(node, L's');
+    trie_get_child_or_add_empty(node, L's');
     struct char_map *map = char_map_init();
     wchar_t trans[256];
     wchar_t *tred = trans;
@@ -960,7 +960,7 @@ static void trie_serialize_formatA_helper_1_test(void **state)
     writep = 0;
     struct trie_node *node = trie_init();
     node->val = L'k';
-    struct trie_node *child = trie_get_child_or_add_empty(node, L'n');
+    trie_get_child_or_add_empty(node, L'n');
     struct char_map *map = char_map_init();
     char_map_put(map, L'k', 5);
     char_map_put(map, L'n', 9);
@@ -982,7 +982,7 @@ static void trie_serialize_formatA_helper_1_leaf_test(void **state)
     struct trie_node *node = trie_init();
     node->val = L'k';
     node->leaf = 1;
-    struct trie_node *child = trie_get_child_or_add_empty(node, L'n');
+    trie_get_child_or_add_empty(node, L'n');
     struct char_map *map = char_map_init();
     char_map_put(map, L'k', 5);
     char_map_put(map, L'n', 9);
@@ -1004,8 +1004,8 @@ static void trie_serialize_formatA_helper_2_test(void **state)
     writep = 0;
     struct trie_node *node = trie_init();
     node->val = L'k';
-    struct trie_node *c1 = trie_get_child_or_add_empty(node, L'n');
-    struct trie_node *c2 = trie_get_child_or_add_empty(node, L't');
+    trie_get_child_or_add_empty(node, L'n');
+    trie_get_child_or_add_empty(node, L't');
     struct char_map *map = char_map_init();
     char_map_put(map, L'k', 5);
     char_map_put(map, L'n', 9);
@@ -1028,8 +1028,8 @@ static void trie_serialize_formatA_test(void **state)
     writep = 0;
     struct trie_node *node = trie_init();
     node->val = L'k';
-    struct trie_node *c1 = trie_get_child_or_add_empty(node, L'n');
-    struct trie_node *c2 = trie_get_child_or_add_empty(node, L't');
+    trie_get_child_or_add_empty(node, L'n');
+    trie_get_child_or_add_empty(node, L't');
     struct char_map *map = char_map_init();
     char_map_put(map, L'k', 5);
     char_map_put(map, L'n', 9);
@@ -1403,9 +1403,9 @@ static void trie_clear_2_test(void **state)
     struct trie_node *node = trie_init();
     struct trie_node *c1 = trie_get_child_or_add_empty(node, L'f');
     struct trie_node *c2 = trie_get_child_or_add_empty(node, L'p');
-    struct trie_node *g1 = trie_get_child_or_add_empty(c1, L'd');
-    struct trie_node *g2 = trie_get_child_or_add_empty(c1, L's');
-    struct trie_node *h1 = trie_get_child_or_add_empty(c2, L'b');
+    trie_get_child_or_add_empty(c1, L'd');
+    trie_get_child_or_add_empty(c1, L's');
+    trie_get_child_or_add_empty(c2, L'b');
     trie_clear(node);
     assert_int_equal(node->cnt, 0);
     trie_done(node);
@@ -1432,7 +1432,7 @@ static void trie_insert_1_test(void **state)
 static void trie_insert_2_test(void **state)
 {
     struct trie_node *node = trie_init();
-    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    trie_get_child_or_add_empty(node, L'f');
     assert_int_equal(trie_insert(node, L"f"),1);
     assert_int_equal(node->cnt, 1);
     assert_int_equal(node->chd[0]->val, L'f');
@@ -1464,7 +1464,7 @@ static void trie_insert_3_test(void **state)
 static void trie_insert_4_test(void **state)
 {
     struct trie_node *node = trie_init();
-    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    trie_get_child_or_add_empty(node, L'f');
     assert_int_equal(trie_insert(node, L"fl"),1);
     assert_int_equal(node->cnt, 1);
     assert_int_equal(node->chd[0]->val, L'f');
@@ -1513,7 +1513,7 @@ static void trie_find_3_test(void **state)
 static void trie_find_4_test(void **state)
 {
     struct trie_node *node = trie_init();
-    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    trie_get_child_or_add_empty(node, L'f');
     assert_int_equal(trie_find(node, L"f"),0);
     trie_done(node);
 }
@@ -1546,7 +1546,7 @@ static void trie_delete_1_test(void **state)
 static void trie_delete_2_test(void **state)
 {
     struct trie_node *node = trie_init();
-    struct trie_node *child = trie_get_child_or_add_empty(node, L'f');
+    trie_get_child_or_add_empty(node, L'f');
     assert_int_equal(trie_delete(node, L"f"), 0);
     trie_done(node);
 }
