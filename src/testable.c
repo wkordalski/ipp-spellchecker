@@ -7,6 +7,7 @@
   @date 2015-05-31
  */
 
+#include <wchar.h>
 
 unsigned char buff[1024];
 int readp = 0;
@@ -52,3 +53,25 @@ char* test_fgets(char *str, int cnt)
     }
     return str;
 }
+
+
+wchar_t wbuff[1024];
+int wreadp = 0;
+int wwritep = 0;
+int wfilelen = 0;
+
+int test_fputwc(wchar_t c)
+{
+    if(wwritep >= 1024) return -1;
+    wbuff[wwritep++] = c;
+    if(wwritep > wfilelen) wfilelen = wwritep;
+    return 0;
+}
+
+int test_fgetwc()
+{
+    if(wreadp >= wfilelen) return -1;
+    return wbuff[wreadp++];
+}
+
+

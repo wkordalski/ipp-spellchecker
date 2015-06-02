@@ -441,12 +441,12 @@ static int trie_serialize_formatU_helper(struct trie_node *node, FILE *file)
 {
     assert(trie_node_integrity(node));
     
-    if(fputwc(node->val)<0) return -1;
+    if(fputwc(node->val, file)<0) return -1;
     if(node->leaf)
-        if(fputwc(1)<0) return -1;
+        if(fputwc(1, file)<0) return -1;
     for(int i = 0; i < node->cnt; i++)
         if(trie_serialize_formatU_helper(node->chd[i], file)<0) return -1;
-    if(fputwc(2)<0) return -1;
+    if(fputwc(2, file)<0) return -1;
     return 0;
 }
 
@@ -462,7 +462,7 @@ static int trie_serialize_formatU(struct trie_node *node, FILE *file)
 {
     for(int i = 0; i < node->cnt; i++)
         if(trie_serialize_formatU_helper(node->chd[i], file)<0) return -1;
-    if(fputwc(0)<0) return -1;
+    if(fputwc(2, file)<0) return -1;
     return 0;
 }
 
@@ -596,7 +596,7 @@ static int trie_deserialize_formatU_helper(struct trie_node *node, FILE *file)
         if(cmd <= 0) return -1;
         // Obsługa różnych rodzajów instrukcji
         if(cmd == 1) node->leaf = 1;
-        if(cmd == 2) break;
+        else if(cmd == 2) break;
         else
         {
             // add letter
@@ -626,7 +626,7 @@ static struct trie_node * trie_deserialize_formatU(FILE *file)
             trie_done(root);
             return NULL;
         }
-        if(cmd == 2) break;
+        else if(cmd == 2) break;
         else
         {
             // add letter
