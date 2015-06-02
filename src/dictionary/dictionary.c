@@ -29,6 +29,7 @@
 struct dictionary
 {
     struct trie_node *root;      ///< Korzeń drzewa TRIE
+    ///@todo Dodać listę reguł
 };
 
 /** @name Funkcje pomocnicze
@@ -100,7 +101,8 @@ void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
         struct word_list *list)
 {
     word_list_init(list);
-    trie_hints(dict->root, word, list);
+    ///@todo Porawne wywoływanie trie_hints
+    //trie_hints(dict->root, word, list);
 }
 
 

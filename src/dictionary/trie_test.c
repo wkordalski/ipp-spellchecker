@@ -1609,35 +1609,7 @@ static void trie_deserialize_test(void **state)
     trie_done(node);
 }
 
-/**
- * Testuje funkcję liczącą podpowiedzi.
- */
-static void trie_hints_test(void **state)
-{
-    setlocale(LC_ALL, "pl_PL.UTF-8");
-    struct trie_node *node = trie_init();
-    trie_insert(node, L"ala");
-    trie_insert(node, L"ola");
-    trie_insert(node, L"ąla");
-    trie_insert(node, L"aga");
-    trie_insert(node, L"ble");
-    trie_insert(node, L"bla");
-    trie_insert(node, L"blaa");
-    trie_insert(node, L"bbla");
-    struct word_list list;
-    word_list_init(&list);
-    trie_hints(node, L"bla", &list);
-    assert_int_equal(word_list_size(&list), 7);
-    assert_true(wcscmp(word_list_get(&list)[0], L"ala")==0);
-    assert_true(wcscmp(word_list_get(&list)[1], L"ąla")==0);
-    assert_true(wcscmp(word_list_get(&list)[2], L"bbla")==0);
-    assert_true(wcscmp(word_list_get(&list)[3], L"bla")==0);
-    assert_true(wcscmp(word_list_get(&list)[4], L"blaa")==0);
-    assert_true(wcscmp(word_list_get(&list)[5], L"ble")==0);
-    assert_true(wcscmp(word_list_get(&list)[6], L"ola")==0);
-    word_list_done(&list);
-    trie_done(node);
-}
+///@todo Testy do trie_hints
 
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -1708,7 +1680,6 @@ int main(void) {
         cmocka_unit_test(trie_delete_3_test),
         cmocka_unit_test(trie_serialize_test),
         cmocka_unit_test(trie_deserialize_test),
-        cmocka_unit_test(trie_hints_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

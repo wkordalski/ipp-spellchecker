@@ -12,12 +12,13 @@
 #define __TRIE_H__
 
 #include "word_list.h"
+#include "rule.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
 /**
- * Węzeł drzewa TRIE
+ * Węzeł drzewa TRIE.
  */
 struct trie_node;
 
@@ -92,6 +93,6 @@ struct trie_node * trie_deserialize(FILE *file);
  * @param[in] word Słowo wzorcowe, do którego znaleźć podobne.
  * @param[out] list Lista słów podobnych.
  */
-void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list);
+void trie_hints(struct trie_node* root, const wchar_t* word, struct word_list* list, struct hint_rule** rules);
 
 #endif /* __TRIE_H__ */

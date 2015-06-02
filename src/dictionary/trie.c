@@ -32,6 +32,7 @@ struct trie_node
     unsigned int leaf;          ///< Czy tutaj kończy się słowo
 };
 
+
 /** @name Funkcje pomocnicze
  * @{
  */
@@ -814,9 +815,20 @@ struct trie_node * trie_deserialize(FILE *file)
     return ret;
 }
 
-void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list)
+void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list, struct hint_rule **rules)
 {
     assert(trie_node_integrity(root));
+    // Preprocessing (rules matching selected suffix)
+    int wlen = wcslen(word);
+    struct hint_rule ***rule_by_suffix = malloc(wlen * sizeof(struct hint_rule**));
+    int rcnt = 0;
+    while(rules[rcnt] != NULL) rcnt++;
+    for(const wchar_t *s = word; *s != 0; s++)
+    {
+        ///@todo Znaleźć reguły pasujące do poszczególnych sufiksów
+    }
+    ///@todo Reszta algorytmu...
+    assert(0 && "Unimplemented");
     struct word_list mylist;
     word_list_init(&mylist);
     int capacity = 1024;
@@ -835,6 +847,7 @@ void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *l
     }
     word_list_done(&mylist);
 }
+
 
 /**@}*/
 
