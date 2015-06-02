@@ -42,8 +42,12 @@ extern void trie_fill_charmap(struct trie_node *node, struct char_map *map, wcha
 extern void trie_serialize_formatA_ender(int res, int count, int loglen, FILE *file);
 extern int trie_serialize_formatA_helper(struct trie_node *node, struct char_map *map, int count, int loglen, FILE *file);
 extern void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int loglen, FILE *file);
+extern int trie_serialize_formatU_helper(struct trie_node *node, FILE *file);
+extern int trie_serialize_formatU(struct trie_node *node, FILE *file);
 extern int trie_deserialize_formatA_helper(struct trie_node *node, int lcount, int loglen, wchar_t * translator, FILE *file);
 extern struct trie_node * trie_deserialize_formatA(FILE *file);
+extern int trie_deserialize_formatU_helper(struct trie_node *node, FILE *file);
+extern struct trie_node * trie_deserialize_formatU(FILE *file);
 extern void fix_size(wchar_t **string, int length, int *capacity);
 extern void trie_hints_helper(struct trie_node *node, const wchar_t *word,
                        wchar_t **created, int length, int *capacity,
