@@ -39,6 +39,10 @@ if (NOT CONF_PATH)
     set(CONF_PATH $ENV{HOME}/.dictionary.rc)
 endif (NOT CONF_PATH)
 
+if (NOT DICTIONARY_MAX_HINTS)
+    set(DICTIONARY_MAX_HINTS 20)
+endif (NOT DICTIONARY_MAX_HINTS)
+
 # plik konfiguracyjny
 configure_file(${CMAKE_SOURCE_DIR}/conf.h.in ${CMAKE_BINARY_DIR}/conf.h)
 
