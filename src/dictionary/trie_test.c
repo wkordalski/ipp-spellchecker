@@ -1065,7 +1065,7 @@ static void trie_serialize_formatA_test(void **state)
 }
 
 /**
- * Testuje funkcję pomocniczą wczytującą drzewo (root)->(t) w formacie dictA.
+ * Testuje funkcję pomocniczą wczytującą drzewo (root)->[t] w formacie dictA.
  */
 static void trie_deserialize_formatA_helper_1_test(void **state)
 {
@@ -1097,7 +1097,7 @@ static void trie_deserialize_formatA_helper_1_test(void **state)
 }
 
 /**
- * Testuje funkcję pomocniczą wczytującą drzewo (root)->(t)->(k) w formacie dictA.
+ * Testuje funkcję pomocniczą wczytującą drzewo (root)->[t]->[k] w formacie dictA.
  */
 static void trie_deserialize_formatA_helper_2_test(void **state)
 {
@@ -1134,7 +1134,7 @@ static void trie_deserialize_formatA_helper_2_test(void **state)
 }
 
 /**
- * Testuje funkcję pomocniczą wczytującą drzewo (root)->(t)->(k)->(n)->(k) w formacie dictA.
+ * Testuje funkcję pomocniczą wczytującą drzewo (root)->(t)->(k)->(n)->[k] w formacie dictA.
  */
 static void trie_deserialize_formatA_helper_3_test(void **state)
 {
@@ -1179,7 +1179,7 @@ static void trie_deserialize_formatA_helper_3_test(void **state)
 }
 
 /**
- * Testuje funkcję wczytującą drzewo (root)->(n),(t) w formacie dictA.
+ * Testuje funkcję wczytującą drzewo (root)->[n],[t] w formacie dictA.
  */
 static void trie_deserialize_fromatA_test(void **state)
 {
