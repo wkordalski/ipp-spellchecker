@@ -5,7 +5,7 @@
   @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
           
   @copyright Uniwerstet Warszawski
-  @date 2015-05-31
+  @date 2015-06-03
  */
 
 #include <stdlib.h>
@@ -34,7 +34,7 @@ struct trie_node
 };
 
 extern int trie_get_child_index(struct trie_node *node, wchar_t value, int begin, int end);
-extern struct trie_node * trie_get_child(struct trie_node *node, wchar_t value);
+extern struct trie_node * trie_get_child_priv(struct trie_node *node, wchar_t value);
 extern struct trie_node * trie_get_child_or_add_empty(struct trie_node *node, wchar_t value);
 extern void trie_cleanup(struct trie_node *node, struct trie_node *parent);
 extern int trie_delete_helper(struct trie_node *node, struct trie_node *parent, const wchar_t *word);
@@ -398,36 +398,36 @@ static void trie_get_child_index_4_test(void **state)
  * Testuje pobranie dziecka o danej etykiecie
  * na pojedynczym węźle.
  */
-static void trie_get_child_empty_test(void **state)
+static void trie_get_child_priv_empty_test(void **state)
 {
     struct trie_node *node = *state;
-    assert_true(trie_get_child(node, L'a') == NULL);
+    assert_true(trie_get_child_priv(node, L'a') == NULL);
 }
 
 /**
  * Testuje pobranie dziecka o danej etykiecie
  * na węźle z jednym dzieckiem.
  */
-static void trie_get_child_1_test(void **state)
+static void trie_get_child_priv_1_test(void **state)
 {
     struct trie_node *node = *state;
-    assert_true(trie_get_child(node, L'a') == NULL);
-    assert_true(trie_get_child(node, L'c') == node->chd[0]);
-    assert_true(trie_get_child(node, L'k') == NULL);
+    assert_true(trie_get_child_priv(node, L'a') == NULL);
+    assert_true(trie_get_child_priv(node, L'c') == node->chd[0]);
+    assert_true(trie_get_child_priv(node, L'k') == NULL);
 }
 
 /**
  * Testuje pobranie dziecka o danej etykiecie
  * na węźle z dwoma dziećmi.
  */
-static void trie_get_child_2_test(void **state)
+static void trie_get_child_priv_2_test(void **state)
 {
     struct trie_node *node = *state;
-    assert_true(trie_get_child(node, L'a') == NULL);
-    assert_true(trie_get_child(node, L'd') == node->chd[0]);
-    assert_true(trie_get_child(node, L'i') == NULL);
-    assert_true(trie_get_child(node, L's') == node->chd[1]);
-    assert_true(trie_get_child(node, L'u') == NULL);
+    assert_true(trie_get_child_priv(node, L'a') == NULL);
+    assert_true(trie_get_child_priv(node, L'd') == node->chd[0]);
+    assert_true(trie_get_child_priv(node, L'i') == NULL);
+    assert_true(trie_get_child_priv(node, L's') == node->chd[1]);
+    assert_true(trie_get_child_priv(node, L'u') == NULL);
 }
 
 /**
@@ -1579,6 +1579,41 @@ static void trie_serialize_test(void **state)
     trie_done(node);
 }
 
+/**
+ * Testuje pobranie dziecka o danej etykiecie
+ * na pojedynczym węźle.
+ */
+static void trie_get_child_empty_test(void **state)
+{
+    struct trie_node *node = *state;
+    assert_true(trie_get_child(node, L'a') == NULL);
+}
+
+/**
+ * Testuje pobranie dziecka o danej etykiecie
+ * na węźle z jednym dzieckiem.
+ */
+static void trie_get_child_1_test(void **state)
+{
+    struct trie_node *node = *state;
+    assert_true(trie_get_child(node, L'a') == NULL);
+    assert_true(trie_get_child(node, L'c') == node->chd[0]);
+    assert_true(trie_get_child(node, L'k') == NULL);
+}
+
+/**
+ * Testuje pobranie dziecka o danej etykiecie
+ * na węźle z dwoma dziećmi.
+ */
+static void trie_get_child_2_test(void **state)
+{
+    struct trie_node *node = *state;
+    assert_true(trie_get_child(node, L'a') == NULL);
+    assert_true(trie_get_child(node, L'd') == node->chd[0]);
+    assert_true(trie_get_child(node, L'i') == NULL);
+    assert_true(trie_get_child(node, L's') == node->chd[1]);
+    assert_true(trie_get_child(node, L'u') == NULL);
+}
 
 /**
  * Testuje funkcję wczytujące drzewo {gl, gr, p}.
@@ -1618,9 +1653,9 @@ int main(void) {
         cmocka_unit_test_setup_teardown(trie_get_child_index_1_test, node_1_setup, node_1_teardown),
         cmocka_unit_test_setup_teardown(trie_get_child_index_2_test, node_2_setup, node_2_teardown),
         cmocka_unit_test_setup_teardown(trie_get_child_index_4_test, node_4_setup, node_4_teardown),
-        cmocka_unit_test_setup_teardown(trie_get_child_empty_test, node_0_setup, node_0_teardown),
-        cmocka_unit_test_setup_teardown(trie_get_child_1_test, node_1_setup, node_1_teardown),
-        cmocka_unit_test_setup_teardown(trie_get_child_2_test, node_2_setup, node_2_teardown),
+        cmocka_unit_test_setup_teardown(trie_get_child_priv_empty_test, node_0_setup, node_0_teardown),
+        cmocka_unit_test_setup_teardown(trie_get_child_priv_1_test, node_1_setup, node_1_teardown),
+        cmocka_unit_test_setup_teardown(trie_get_child_priv_2_test, node_2_setup, node_2_teardown),
         cmocka_unit_test(trie_get_child_or_add_empty_test),
         cmocka_unit_test(trie_get_child_or_add_1A_test),
         cmocka_unit_test(trie_get_child_or_add_1B_test),
@@ -1680,6 +1715,9 @@ int main(void) {
         cmocka_unit_test(trie_delete_3_test),
         cmocka_unit_test(trie_serialize_test),
         cmocka_unit_test(trie_deserialize_test),
+        cmocka_unit_test_setup_teardown(trie_get_child_empty_test, node_0_setup, node_0_teardown),
+        cmocka_unit_test_setup_teardown(trie_get_child_1_test, node_1_setup, node_1_teardown),
+        cmocka_unit_test_setup_teardown(trie_get_child_2_test, node_2_setup, node_2_teardown),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

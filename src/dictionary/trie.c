@@ -5,7 +5,7 @@
   @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
           
   @copyright Uniwerstet Warszawski
-  @date 2015-05-24
+  @date 2015-06-03
  */
 
 #include "trie.h"
@@ -44,7 +44,7 @@ struct trie_node
  * 
  * @return 1 jeśli węzeł jest poprawny, 0 otherwise.
  */
-static int trie_node_integrity(struct trie_node *node)
+static int trie_node_integrity(const struct trie_node *node)
 {
     if(node == NULL) return 0;
     if(node->cnt > node->cap) return 0;
@@ -71,7 +71,7 @@ static int trie_node_integrity(struct trie_node *node)
  * @return -1 jeśli trzeba utworzyć listę dzieci lub indeks, na którym powinien
  * być dany element (trzeba sprawdzić czy rzeczywiście tam jest)
  */
-static int trie_get_child_index(struct trie_node *node, wchar_t value, int begin, int end)
+static int trie_get_child_index(const struct trie_node *node, wchar_t value, int begin, int end)
 {
     assert(trie_node_integrity(node));
     assert(0 <= begin && begin <= end && end <= node->cnt);
@@ -102,7 +102,7 @@ static int trie_get_child_index(struct trie_node *node, wchar_t value, int begin
  * 
  * @return Wskaźnik na znaleziony węzeł lub NULL jeśli nie znaleziono.
  */
-static struct trie_node * trie_get_child(struct trie_node *node, wchar_t value)
+static struct trie_node * trie_get_child_priv(struct trie_node *node, wchar_t value)
 {
     assert(trie_node_integrity(node));
     int r = trie_get_child_index(node, value, 0, node->cnt);
@@ -249,7 +249,7 @@ static int trie_delete_helper(struct trie_node *node, struct trie_node *parent, 
             return 0;
         }
     }
-    struct trie_node *child = trie_get_child(node, word[0]);
+    struct trie_node *child = trie_get_child_priv(node, word[0]);
     if(child == NULL)
     {
         return 0;
@@ -590,7 +590,7 @@ static void trie_hints_helper(struct trie_node *node, const wchar_t *word,
         }
         else
         {
-            struct trie_node *child = trie_get_child(node, word[0]);
+            struct trie_node *child = trie_get_child_priv(node, word[0]);
             if(child != NULL)
             {
                 (*created)[length] = word[0];
@@ -616,7 +616,7 @@ static void trie_hints_helper(struct trie_node *node, const wchar_t *word,
         else
         {
             // No change
-            struct trie_node *child = trie_get_child(node, word[0]);
+            struct trie_node *child = trie_get_child_priv(node, word[0]);
             if(child != NULL)
             {
                 (*created)[length] = word[0];
@@ -744,11 +744,11 @@ int trie_insert(struct trie_node* root, const wchar_t* word)
     }
 }
 
-int trie_find(struct trie_node* root, const wchar_t* word)
+int trie_find(const struct trie_node* root, const wchar_t* word)
 {
     assert(trie_node_integrity(root));
     if(word[0] == 0) return root->leaf;
-    struct trie_node *child = trie_get_child(root, word[0]);
+    const struct trie_node *child = trie_get_child(root, word[0]);
     if(child == NULL) return 0;
     return trie_find(child, word + 1);
 }
@@ -757,7 +757,7 @@ int trie_delete(struct trie_node* root, const wchar_t* word)
 {
     assert(trie_node_integrity(root));
     assert(word[0] != 0);
-    struct trie_node *child = trie_get_child(root, word[0]);
+    struct trie_node *child = trie_get_child_priv(root, word[0]);
     if(child == NULL)
     {
         return 0;
@@ -813,6 +813,16 @@ struct trie_node * trie_deserialize(FILE *file)
     }
     assert(trie_node_integrity(ret));
     return ret;
+}
+
+const struct trie_node * trie_get_child(const struct trie_node *node, wchar_t value)
+{
+    assert(trie_node_integrity(node));
+    int r = trie_get_child_index(node, value, 0, node->cnt);
+    if(r == -1) return NULL;
+    if(r == node->cnt) return NULL;
+    if(node->chd[r]->val != value) return NULL;
+    return node->chd[r];
 }
 
 void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list, struct hint_rule **rules)

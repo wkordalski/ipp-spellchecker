@@ -5,7 +5,7 @@
   @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
           
   @copyright Uniwerstet Warszawski
-  @date 2015-06-02
+  @date 2015-06-03
  */
 
 #include "dictionary.h"
@@ -21,6 +21,13 @@ struct hint_rule
     enum rule_flag flag;             ///< Flagi reguły.
 };
 
+struct state
+{
+    wchar_t *suf;
+    struct trie_node * node;
+    struct state *prnt;
+    struct hint_rule *prev;
+};
 
 static bool pattern_matches(const wchar_t *pattern, const wchar_t *text, wchar_t *memory)
 {

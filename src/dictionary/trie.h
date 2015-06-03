@@ -5,7 +5,7 @@
     @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
             
     @copyright Uniwerstet Warszawski
-    @date 2015-05-24
+    @date 2015-06-03
  */
 
 #ifndef __TRIE_H__
@@ -59,7 +59,7 @@ int trie_insert(struct trie_node *root, const wchar_t *word);
  * @param[in] word Słowo do znalezienia.
  * @return 0 jeśli nie znaleziono słowa, 1 gdy znaleziono.
  */
-int trie_find(struct trie_node *root, const wchar_t *word);
+int trie_find(const struct trie_node *root, const wchar_t *word);
 
 /**
  * Usuwa słowo z drzewa.
@@ -85,6 +85,15 @@ int trie_serialize(struct trie_node *root, FILE *file);
  * @return Wczytane drzewo.
  */
 struct trie_node * trie_deserialize(FILE *file);
+
+/**
+ * Zwraca dziecko o podanej wartości.
+ * 
+ * @param[in] node Węzeł, którego dziecko zwrócić.
+ * @param[in] value Wartość dziecka.
+ * @return Węzeł reprezentujący dziecko lub NULL jeśli takowe nie istnieje.
+ */
+const struct trie_node * trie_get_child(const struct trie_node *node, wchar_t value);
 
 /**
  * Znajduje wyrazy podobne do podanego w drzewie.
