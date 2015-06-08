@@ -1,13 +1,19 @@
 # dodajemy bibliotekę dictionary, stworzoną na podstawie pliku dictionary.c
 # biblioteka będzie dołączana statycznie (czyli przez linkowanie pliku .o)
 
-add_library (dictionary dictionary.c word_list.c trie.c charmap.c rule.c)
+add_library (dictionary dictionary.c word_list.c trie.c charmap.c rule.c list.c)
 
 
 if (CMOCKA) 
     add_executable (word_list_test word_list.c word_list_test.c ../testable.c)
     target_link_libraries (word_list_test ${CMOCKA})
     add_test (word_list_unit_test word_list_test)
+    
+    
+    add_executable (list_test list_test.c list.c ../testable.c)
+    target_link_libraries (list_test ${CMOCKA})
+    set_target_properties(list_test PROPERTIES COMPILE_DEFINITIONS UNIT_TESTING=1)
+    add_test (list_unit_test list_test)
     
     
     add_executable (charmap_test charmap.c charmap_test.c ../testable.c)
