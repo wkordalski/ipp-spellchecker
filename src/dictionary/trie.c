@@ -825,6 +825,27 @@ const struct trie_node * trie_get_child(const struct trie_node *node, wchar_t va
     return node->chd[r];
 }
 
+int trie_get_children(const struct trie_node *node, const struct trie_node *** children)
+{
+    (*children) = (const struct trie_node**)node->chd;
+    return node->cnt;
+}
+
+wchar_t trie_get_value(const struct trie_node *node)
+{
+    return node->val;
+}
+
+const wchar_t * trie_get_value_ptr(const struct trie_node *node)
+{
+    return &(node->val);
+}
+
+bool trie_is_leaf(const struct trie_node *node)
+{
+    return node->leaf;
+}
+
 void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list, struct hint_rule **rules)
 {
     assert(trie_node_integrity(root));

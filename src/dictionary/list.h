@@ -34,9 +34,42 @@ void list_done(struct list *l);
   Dodaje element na koniec listy.
   @param[in,out] l Lista.
   @param[in] e Element.
-  @return Indeks wstawionego elementu jeśli się udało, -1 w p.p.
+  @return Nowy rozmiar listy jeśli się udało, 0 w p.p.
   */
-int list_add(struct list *l, void *e);
+size_t list_add(struct list *l, void *e);
+
+/**
+ * Dodaje listę elementów na koniec listy.
+ * @param[in,out] l Lista, do której dodać.
+ * @param[in] m Lista elementów do dadania.
+ * @return Nowy rozmiar listy jeśli się udało, 0 w p.p.
+ */
+size_t list_add_list(struct list *l, struct list *m);
+
+/**
+  Dodaje element na koniec listy.
+  @param[in,out] l Lista.
+  @param[in] e Element.
+  @return Nowy rozmiar listy jeśli się udało, 0 w p.p.
+  */
+inline size_t list_push(struct list *l, void *e)
+{
+    return list_add(l, e);
+}
+
+/**
+ * Usuwa ostatni element z listy.
+ * @param[in,out] l Lista.
+ * @return Nowy rozmiar listy.
+ */
+size_t list_pop(struct list *l);
+
+/**
+ * Pobiera element z wierzchołka listy.
+ * @param[in] l Lista.
+ * @return Ostatni element listy.
+ */
+void * list_top(struct list *l);
 
 /**
   Zwraca liczbę elementów w liście.
@@ -76,9 +109,20 @@ void list_sort(struct list *l, int (*f)(void*,void*));
 
 /**
  * Sortuje listę i usuwa duplikaty.
+ * Wymagane jest aby: f(a,b)=0 => g(a,b)=0, g(a,b)!=0 => f(a,b)=g(a,b)
+ * oraz (g(a,c)=0 i f(a,b)<=0 i f(b,c)<=0) => g(b,c)=0.
  * @param[in,out] l Lista.
- * @param[in] Funkcja sortująca.
+ * @param[in] f Funkcja sortująca.
+ * @param[in] g Funkcja wykazująca równość elementów.
+ * @param[in] dups Jeśli różne od NULL, to zostaną tam wstawione duplikaty.
  */
-void list_sort_and_unify(struct list *l, int (*f)(void*,void*));
+void list_sort_and_unify(struct list *l, int (*f)(void*,void*), int (*g)(void*,void*), struct list *dups);
 
+
+/**
+ * Usuwa wszystkie elementy z listy.
+ * 
+ * @param[in,out] l Lista.
+ */
+void list_clear(struct list *l);
 #endif /* DICTIONARY_LIST_H */

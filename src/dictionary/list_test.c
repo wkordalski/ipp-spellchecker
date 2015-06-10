@@ -15,9 +15,11 @@
 #include <cmocka.h>
 #include "list.h"
 
+static void empty(void **s){}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
-        ///@todo Add tests.
+        cmocka_unit_test(empty)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

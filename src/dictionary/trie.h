@@ -96,6 +96,36 @@ struct trie_node * trie_deserialize(FILE *file);
 const struct trie_node * trie_get_child(const struct trie_node *node, wchar_t value);
 
 /**
+ * Zwraca dzieci danego węzła.
+ * Tablica może stać się niepoprawna po modyfikujących drzewo operacjach.
+ * @param[in] node Węzeł, którego dzieci zwrócić.
+ * @param[out] children Tablica wskaźników na dzieci.
+ * @return Liczba dzieci w tablicy.
+ */
+int trie_get_children(const struct trie_node *node, const struct trie_node *** children);
+
+/**
+ * Zwraca wartość przechowywaną w danym węźle.
+ * @param[in] node Węzeł, którego wartość zwrócić.
+ * @return Wartość węzła.
+ */
+wchar_t trie_get_value(const struct trie_node *node);
+
+/**
+ * Zwraca wskaźnik na wartość przechowywaną w danym węźle.
+ * @param[in] node Węzeł.
+ * @return Wskaźnik na Wartość węzła.
+ */
+const wchar_t * trie_get_value_ptr(const struct trie_node *node);
+
+/**
+ * Sprawdza, czy węzeł jest liściem.
+ * @param[in] node Węzeł.
+ * @return Czy węzeł jest liściem.
+ */
+bool trie_is_leaf(const struct trie_node *node);
+
+/**
  * Znajduje wyrazy podobne do podanego w drzewie.
  * 
  * @param[in] root Drzewo do przeszukania.

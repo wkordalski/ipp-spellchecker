@@ -48,18 +48,47 @@ void list_done(struct list *l)
     free(l);
 }
 
-int list_add(struct list *l, void *e)
+size_t list_add(struct list *l, void *e)
 {
     if(l->size >= l->capacity)
     {
         size_t dcap = l->capacity * 2;
-        if(l->size > dcap) dcap = l->size;
+        if(l->size > dcap) dcap = l->size * 2;
         list_reserve(l, dcap);
     }
     l->array[l->size] = e;
     l->size++;
-    return l->size-1;
+    return l->size;
 }
+
+size_t list_add_list(struct list *l, struct list *m)
+{
+    if(l->size + m->size >= l->capacity)
+    {
+        size_t dcap = l->capacity;
+        if(m->capacity > dcap) dcap = m->capacity;
+        if(l->size + m->size >= dcap) dcap *= 2;
+        if(l->size + m->size >= dcap) dcap = (l->size + m->size)*2;
+        list_reserve(l, dcap);
+    }
+    memcpy(l->array + l->size, m->array, m->size * sizeof(void*));
+    l->size += m->size;
+    return l->size;
+}
+
+size_t list_pop(struct list* l)
+{
+    if(l->size == 0) return 0;
+    l->size--;
+    return l->size;
+}
+
+void* list_top(struct list* l)
+{
+    if(l->size == 0) return NULL;
+    return l->array[l->size - 1];
+}
+
 
 size_t list_size(const struct list *l)
 {
@@ -91,7 +120,7 @@ void list_sort(struct list *l, int (*f)(void*,void*))
     qsort(l->array, l->size, sizeof(void*), f);
 }
 
-void list_sort_and_unify(struct list *l, int (*f)(void*,void*))
+void list_sort_and_unify(struct list *l, int (*f)(void*,void*), int (*g)(void*,void*), struct list *dups)
 {
     if(l->size <= 1) return;
     list_sort(l, f);
@@ -103,15 +132,25 @@ void list_sort_and_unify(struct list *l, int (*f)(void*,void*))
     oa++;
     for(int i = 1; i < l->size; i++)
     {
-        if(f(oa-1, oa) != 0)
+        if(g(oa-1, oa) != 0)
         {
             *na = *oa;
             na++;
             ns++;
+        }
+        else
+        {
+            if(dups != NULL)
+                list_add(dups, *oa);
         }
         oa++;
     }
     free(l->array);
     l->array = na;
     l->size = ns;
+}
+
+void list_clear(struct list *l)
+{
+    l->size = 0;
 }
