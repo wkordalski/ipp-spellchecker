@@ -11,16 +11,20 @@
 #ifndef __TRIE_H__
 #define __TRIE_H__
 
+/**
+ * Węzeł drzewa TRIE.
+ */
+struct trie_node;
+
+
+/*
+ * Includes.
+ */
 #include "word_list.h"
 #include "rule.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-
-/**
- * Węzeł drzewa TRIE.
- */
-struct trie_node;
 
 /**
  * Tworzy nowy węzeł drzewa TRIE

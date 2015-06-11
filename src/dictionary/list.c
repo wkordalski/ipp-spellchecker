@@ -115,12 +115,12 @@ void ** list_get(struct list *l)
     return l->array;
 }
 
-void list_sort(struct list *l, int (*f)(void*,void*))
+void list_sort(struct list *l, int (*f)(const void*, const void*))
 {
     qsort(l->array, l->size, sizeof(void*), f);
 }
 
-void list_sort_and_unify(struct list *l, int (*f)(void*,void*), int (*g)(void*,void*), struct list *dups)
+void list_sort_and_unify(struct list *l, int (*f)(const void*, const void*), int (*g)(const void*, const void*), struct list *dups)
 {
     if(l->size <= 1) return;
     list_sort(l, f);

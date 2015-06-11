@@ -105,7 +105,7 @@ void ** list_get(struct list *l);
  * @param[in,out] l Lista.
  * @param[in] f Funkcja sortująca.
  */
-void list_sort(struct list *l, int (*f)(void*,void*));
+void list_sort(struct list* l, int (*f)(const void*, const void*));
 
 /**
  * Sortuje listę i usuwa duplikaty.
@@ -116,8 +116,7 @@ void list_sort(struct list *l, int (*f)(void*,void*));
  * @param[in] g Funkcja wykazująca równość elementów.
  * @param[in] dups Jeśli różne od NULL, to zostaną tam wstawione duplikaty.
  */
-void list_sort_and_unify(struct list *l, int (*f)(void*,void*), int (*g)(void*,void*), struct list *dups);
-
+void list_sort_and_unify(struct list* l, int (*f)(const void*, const void*), int (*g)(const void*, const void*), struct list* dups);
 
 /**
  * Usuwa wszystkie elementy z listy.

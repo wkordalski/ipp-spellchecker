@@ -9,7 +9,10 @@
  */
 
 #include "trie.h"
+
 #include "charmap.h"
+#include "list.h"
+#include "rule.h"
 #include "word_list.h"
 
 #include <assert.h>
@@ -563,98 +566,6 @@ static void fix_size(wchar_t **string, int length, int *capacity)
 }
 
 /**
- * Znajduje podpowiedzi w danym poddrzewie.
- * 
- * @param[in] node Poddrzewo do przeszukania.
- * @param[in] word Podsłowo wzorcowe, wg którego szukać podpowiedzi.
- * @param[in,out] created Słowo reprezentowane przez node'a.
- * @param[in] length Długość słowa created.
- * @param[in,out] capacity Wskaźnik na pojemność stringu created.
- * @param[in,out] points Ilość dozwolonych jeszcze zmian w podsłowie wzorcowym.
- * @param[in,out] list Lista wygenerowanych podpowiedzi.
- */
-static void trie_hints_helper(struct trie_node *node, const wchar_t *word,
-                       wchar_t **created, int length, int *capacity,
-                       int points, struct word_list *list)
-{
-    assert(trie_node_integrity(node));
-    // We can only add one letter, so...
-    fix_size(created, length + 1, capacity);
-    if(points <= 0)
-    {
-        // No change
-        if(word[0] == L'\0')
-        {
-            (*created)[length] = L'\0';
-            if(node->leaf) word_list_add(list, *created);
-        }
-        else
-        {
-            struct trie_node *child = trie_get_child_priv(node, word[0]);
-            if(child != NULL)
-            {
-                (*created)[length] = word[0];
-                trie_hints_helper(child, word+1,created, length+1, capacity, 0, list);
-            }
-        }
-    }
-    else
-    {
-        if(word[0] == L'\0')
-        {
-            // No change
-            (*created)[length] = L'\0';
-            if(node->leaf) word_list_add(list, *created);
-            
-            // Add some letter
-            for(int i = 0; i < node->cnt; i++)
-            {
-                (*created)[length] = node->chd[i]->val;
-                trie_hints_helper(node->chd[i], word, created, length+1, capacity, points-1, list);
-            }
-        }
-        else
-        {
-            // No change
-            struct trie_node *child = trie_get_child_priv(node, word[0]);
-            if(child != NULL)
-            {
-                (*created)[length] = word[0];
-                trie_hints_helper(child, word+1,created, length+1, capacity, points, list);
-            }
-            // Miss the current letter
-            trie_hints_helper(node, word+1, created, length, capacity, points-1, list);
-            // Add some letter or swap current with some letter
-            for(int i = 0; i < node->cnt; i++)
-            {
-                (*created)[length] = node->chd[i]->val;
-                trie_hints_helper(node->chd[i], word, created, length+1, capacity, points-1, list);
-                if(node->chd[i]->val != word[0])
-                {
-                    // But must be some change
-                    trie_hints_helper(node->chd[i], word+1, created, length+1, capacity, points-1, list);
-                }
-            }
-        }
-    }
-}
-
-/**
- * Porównuje dwa stringi alfabetycznie.
- * 
- * Komparator dla qsort.
- * 
- * @param[in] a Wskaźnik na pierwszego stringa.
- * @param[in] b Wskaźnik na drugiego stringa.
- * 
- * @return Wynik porównania.
- */
-static int locale_sorter(const void *a, const void *b)
-{
-    return wcscoll(*(const wchar_t**)a, *(const wchar_t**)b);
-}
-
-/**
  * Wypisuje słowa z danego poddrzewa.
  * 
  * @param[in] node Węzęł reprezentujący poddrzewo.
@@ -849,34 +760,11 @@ bool trie_is_leaf(const struct trie_node *node)
 void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list, struct hint_rule **rules)
 {
     assert(trie_node_integrity(root));
-    // Preprocessing (rules matching selected suffix)
-    int wlen = wcslen(word);
-    struct hint_rule ***rule_by_suffix = malloc(wlen * sizeof(struct hint_rule**));
-    int rcnt = 0;
-    while(rules[rcnt] != NULL) rcnt++;
-    for(const wchar_t *s = word; *s != 0; s++)
+    struct list *output = rule_generate_hints(rules, 10 /**<@todo*/, 10 /**<@todo*/, root, word);
+    for(int i = 0; i < list_size(output); i++)
     {
-        ///@todo Znaleźć reguły pasujące do poszczególnych sufiksów
+        word_list_add(list, list_get(output)[i]);
     }
-    ///@todo Reszta algorytmu...
-    assert(0 && "Unimplemented");
-    struct word_list mylist;
-    word_list_init(&mylist);
-    int capacity = 1024;
-    wchar_t *buff = malloc(sizeof(wchar_t)*capacity);
-    trie_hints_helper(root, word, &buff, 0, &capacity, 1, &mylist);
-    free(buff);
-    const wchar_t ** array = (const wchar_t **)word_list_get(&mylist);
-    qsort(array, word_list_size(&mylist), sizeof(wchar_t*), locale_sorter);
-    if(word_list_size(&mylist) > 0) word_list_add(list, array[0]);
-    for(int i = 1; i < word_list_size(&mylist); i++)
-    {
-        if(wcscmp(array[i-1], array[i]) != 0)
-        {
-            word_list_add(list, array[i]);
-        }
-    }
-    word_list_done(&mylist);
 }
 
 
