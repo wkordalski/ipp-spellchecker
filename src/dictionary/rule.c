@@ -48,6 +48,8 @@ static int state_sorter(const void *a, const void *b)
     struct state *B = *(struct state**)b;
     if((size_t)A->node - (size_t)B->node != 0) return (size_t)A->node - (size_t)B->node;
     if((size_t)A->prev - (size_t)B->prev != 0) return (size_t)A->prev - (size_t)B->prev;
+    if(A->rule->flag == RULE_END && B->rule->flag != RULE_END) return 1;
+    if(A->rule->flag != RULE_END && B->rule->flag == RULE_END) return -1;
     int alen = wcslen(A->suf);
     int blen = wcslen(B->suf);
     return alen - blen;
@@ -66,8 +68,6 @@ static int costed_state_comparer(const void *a, const void *b)
 {
     struct costed_state *A = *(struct costed_state**)a;
     struct costed_state *B = *(struct costed_state**)b;
-    // Bad endings...
-    if(B->s->suf[0] == 0 && trie_is_leaf(B->s->node)) return 0;
     return state_sorter(&(A->s), &(B->s));
 }
 
@@ -119,50 +119,67 @@ static int rule_cost_sorter(const void *a, const void *b)
 }
 
 // rule*[cost][idx]
-static struct hint_rule *** preprocess_suffix(struct hint_rule **rules, int rcnt, int max_cost, const wchar_t *word, bool begin)
+static struct hint_rule *** preprocess_suffix(struct hint_rule **rules, int rcnt, const wchar_t *word, bool begin)
 {
     // Sprawdzić, które reguły pasują
     struct hint_rule ** partial = malloc(rcnt * sizeof(struct hint_rule*));
     struct hint_rule ** partial_end = partial;
     
-    for(struct hint_rule **i = rules; *i != NULL; i++)
+    for(int i = 0; i < rcnt; i++)
     {
+        struct hint_rule *it = rules[i];
         wchar_t memory[10];
-        if(pattern_matches((*i)->src, word, memory))
+        if(pattern_matches(it->src, word, memory))
         {
-            if((*i)->flag == RULE_BEGIN && begin == false) continue;
-            if((*i)->flag == RULE_END && wcslen((*i)->src) != wcslen(word)) continue;
-            *partial_end = *i;
+            if(it->flag == RULE_BEGIN && begin == false) continue;
+            if(it->flag == RULE_END && wcslen(it->src) != wcslen(word)) continue;
+            *partial_end = it;
             partial_end++;
         }
+    }
+    if(partial == partial_end)
+    {
+        free(partial);
+        struct hint_rule *** output = malloc(sizeof(struct hint_rule**));
+        output[0] = NULL;
+        return output;
     }
     // Posortować reguły
     qsort(partial, partial_end - partial, sizeof(struct hint_rule*), rule_cost_sorter);
     // Przepisać do kubełków
     int buckets_count = (*(partial_end-1))->cost+2;
     struct hint_rule *** output = malloc(buckets_count * sizeof(struct hint_rule*));
-    output[buckets_count-1] = NULL;
-    for(struct hint_rule **it = partial; it < partial_end; it++)
+    for(int i = 0; i < buckets_count; i++) output[i] = NULL;
+    for(struct hint_rule **it = partial; it < partial_end;)
     {
         int cost = it[0]->cost;
         int bsize = 0;
         for(struct hint_rule **jt = it; jt < partial_end && jt[0]->cost == cost; jt++) bsize++;
         struct hint_rule **bucket = malloc((bsize + 1) * sizeof(struct hint_rule*));
         struct hint_rule **bucket_end = bucket;
-        for(struct hint_rule **jt = it; jt < partial_end && jt[0]->cost == cost; jt++)
+        for(; it < partial_end && it[0]->cost == cost; it++)
         {
-            *bucket_end = *jt;
+            *bucket_end = *it;
             bucket_end++;
         }
         *bucket_end = NULL;
         output[cost] = bucket;
+    }
+    // Last one should be simply NULL!
+    for(int i = 0; i < buckets_count - 1; i++)
+    {
+        if(output[i] == NULL)
+        {
+            output[i] = malloc(sizeof(struct hint_rule*));
+            output[i][0] = NULL;
+        }
     }
     free(partial);
     return output;
 }
 
 // rule*[sufix][cost][idx]
-static struct hint_rule **** preprocess(struct hint_rule **rules, int max_cost, const wchar_t *word)
+static struct hint_rule **** preprocess(struct hint_rule **rules, const wchar_t *word)
 {
     int rcnt = 0;
     while(rules[rcnt] != NULL) rcnt++;
@@ -172,12 +189,31 @@ static struct hint_rule **** preprocess(struct hint_rule **rules, int max_cost, 
     bool begin = true;
     while(*word != 0)
     {
-        *output_walker = preprocess_suffix(rules, rcnt, max_cost, word, begin);
+        *output_walker = preprocess_suffix(rules, rcnt, word, begin);
         output_walker--;
         word++;
         begin = false;
     }
+    *output = NULL;
     return output;
+}
+
+static void free_preprocessing_data_for_suffix(struct hint_rule ***pp)
+{
+    for(struct hint_rule ***it = pp; *it != NULL; it++)
+    {
+        free(*it);
+    }
+    free(pp);
+}
+
+static void free_preprocessing_data(struct hint_rule ****pp, int wlen)
+{
+    for(int i = 1; i <= wlen; i++)
+    {
+        free_preprocessing_data_for_suffix(pp[i]);
+    }
+    free(pp);
 }
 
 struct hint_rule * rule_make(wchar_t *src, wchar_t *dst, int cost, enum rule_flag flag)
@@ -195,13 +231,8 @@ void rule_done(struct hint_rule *rule)
     free(rule);
 }
 
-bool rule_matches(struct hint_rule *rule, const wchar_t *text)
-{
-    wchar_t memory[10];
-    return pattern_matches(rule->src, text, memory);
-}
 
-struct list * extend_state(struct state *s)
+static struct list * extend_state(struct state *s)
 {
     struct list * ret = list_init();
     list_add(ret, s);
@@ -221,7 +252,15 @@ struct list * extend_state(struct state *s)
     }
 }
 
-void explore_trie(const struct trie_node *n, wchar_t *dst, wchar_t memory[10], struct list *l, struct state *ps, struct hint_rule *r, const wchar_t *suf, wchar_t last_guessed)
+static void explore_trie(const struct trie_node *n,
+                         wchar_t *dst,
+                         wchar_t memory[10],
+                         struct list *l,
+                         struct state *ps,
+                         struct hint_rule *r,
+                         const wchar_t *suf,
+                         const struct trie_node *root,
+                         wchar_t last_guessed)
 {
     if(*dst == 0)
     {
@@ -234,14 +273,19 @@ void explore_trie(const struct trie_node *n, wchar_t *dst, wchar_t memory[10], s
         s->free_variable = last_guessed;
         if(r->flag == RULE_SPLIT || r->flag == RULE_END)
         {
-            if(trie_is_leaf(n))
-                list_add(l, s);
-            // DO NOT EXTEND and n must be leaf
+            if(!trie_is_leaf(n))
+            {
+                free(s);
+                return;
+            }
         }
-        else
+        if(r->flag == RULE_SPLIT)
         {
-            list_add_list(l, extend_state(s));
+            assert(s->prev == NULL);
+            s->prev = s->node;
+            s->node = root;
         }
+        list_add_list(l, extend_state(s));
         return;
     }
     wchar_t addtn = translate_letter(*dst, memory);
@@ -254,7 +298,7 @@ void explore_trie(const struct trie_node *n, wchar_t *dst, wchar_t memory[10], s
         {
             const struct trie_node *curr = nodes[i];
             memory[addtn] = trie_get_value(curr);
-            explore_trie(curr, dst+1, memory, l, ps, r, suf, trie_get_value(curr));
+            explore_trie(curr, dst+1, memory, l, ps, r, suf, root, trie_get_value(curr));
         }
         memory[addtn] = 0;
     }
@@ -262,20 +306,20 @@ void explore_trie(const struct trie_node *n, wchar_t *dst, wchar_t memory[10], s
     {
         const struct trie_node *curr = trie_get_child(n, addtn);
         if(curr == NULL) return;
-        explore_trie(curr, dst+1, memory, l, ps, r, suf, last_guessed);
+        explore_trie(curr, dst+1, memory, l, ps, r, suf, root, last_guessed);
     }
 }
 
-struct list * apply_rule(struct state *s, struct hint_rule *r)
+static struct list * apply_rule(struct state *s, struct hint_rule *r, const struct trie_node *root)
 {
     wchar_t memory[10];
     struct list *ret = list_init();
     if(!pattern_matches(r->src, s->suf, memory)) return NULL;
-    explore_trie(s->node, r->dst, memory, ret, s, r, s->suf + wcslen(r->src), 0);
+    explore_trie(s->node, r->dst, memory, ret, s, r, s->suf + wcslen(r->src), root, 0);
     return ret;
 }
 
-struct list * apply_rules_to_states(struct list *s, int c, struct hint_rule ****pp)
+static struct list * apply_rules_to_states(struct list *s, int c, const struct trie_node *root, struct hint_rule ****pp)
 {
     struct state ** sts = (struct state**)list_get(s);
     struct list *ret = list_init();
@@ -283,10 +327,11 @@ struct list * apply_rules_to_states(struct list *s, int c, struct hint_rule ****
     {
         struct list *std = list_init();
         struct state *ss = sts[i];
+        if(ss->rule != NULL && ss->rule->flag == RULE_END) continue;
         struct hint_rule **hrg = pp[wcslen(ss->suf)][c];
         while(*hrg != NULL)
         {
-            struct list *lst = apply_rule(ss, *hrg);
+            struct list *lst = apply_rule(ss, *hrg, root);
             list_add_list(std, lst);
             list_done(lst);
             hrg++;
@@ -297,7 +342,7 @@ struct list * apply_rules_to_states(struct list *s, int c, struct hint_rule ****
     return ret;
 }
 
-void unify_states(struct list **ll, int mc)
+static void unify_states(struct list **ll, int mc)
 {
     struct list *ret = list_init();
     int sno = 0;
@@ -328,7 +373,7 @@ void unify_states(struct list **ll, int mc)
         free(cs);
     }
     css = (struct costed_state **)list_get(dups);
-    for(int i = 0; i < list_size(ret); i++)
+    for(int i = 0; i < list_size(dups); i++)
     {
         struct costed_state *cs = css[i];
         free(cs->s);
@@ -343,7 +388,7 @@ static int locale_sorter(const void *a, const void *b)
     return wcscoll(*(const wchar_t**)a, *(const wchar_t**)b);
 }
 
-void get_text_helper(struct state *s, struct list *l, const struct trie_node *prev)
+static void get_text_helper(struct state *s, struct list *l, const struct trie_node *prev)
 {
     
     if(s->prnt != NULL) get_text_helper(s->prnt, l, prev);
@@ -368,7 +413,7 @@ void get_text_helper(struct state *s, struct list *l, const struct trie_node *pr
     if(s->node == prev) list_add(l, NULL);  // Spacja
 }
 
-wchar_t * get_text(struct state *s)
+static wchar_t * get_text(struct state *s)
 {
     struct list *l = list_init();
     get_text_helper(s, l, s->prev);
@@ -385,7 +430,8 @@ wchar_t * get_text(struct state *s)
 
 struct list * rule_generate_hints(struct hint_rule **rules, int max_cost, int max_hints_no, struct trie_node *root, const wchar_t *word)
 {
-    struct hint_rule ****pp = preprocess(rules, max_cost, word);
+    int wlen = wcslen(word);
+    struct hint_rule ****pp = preprocess(rules, word);
     struct state *is = malloc(sizeof(struct state));
     is->node = root;
     is->prev = NULL;
@@ -414,7 +460,7 @@ struct list * rule_generate_hints(struct hint_rule **rules, int max_cost, int ma
         for(int j = 1; j < i; j++)
         {
             int lno = i - j;
-            list_add_list(layers[i], apply_rules_to_states(layers[lno], lno, pp));
+            list_add_list(layers[i], apply_rules_to_states(layers[lno], lno, root, pp));
         }
         unify_states(layers, i);
         struct state **li = (struct state **)list_get(layers[i]);
@@ -448,6 +494,9 @@ done:
         }
         list_done(ll);
     }
+    // Preprocessing data
+    free_preprocessing_data(pp, wlen);
+    
     return output;
 }
 

@@ -125,6 +125,7 @@ void list_sort_and_unify(struct list *l, int (*f)(const void*, const void*), int
     if(l->size <= 1) return;
     list_sort(l, f);
     void **na = malloc(l->capacity * sizeof(void*));
+    void **nab = na;
     size_t ns = 1;
     void **oa = l->array;
     *na = *oa;
@@ -146,7 +147,7 @@ void list_sort_and_unify(struct list *l, int (*f)(const void*, const void*), int
         oa++;
     }
     free(l->array);
-    l->array = na;
+    l->array = nab;
     l->size = ns;
 }
 
