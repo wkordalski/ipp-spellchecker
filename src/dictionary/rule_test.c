@@ -52,6 +52,8 @@ extern void explore_trie(const struct trie_node *n, wchar_t *dst, wchar_t memory
 extern struct list * apply_rule(struct state *s, struct hint_rule *r, const struct trie_node *root);
 extern struct list * apply_rules_to_states(struct list *s, int c, const struct trie_node *root, struct hint_rule ****pp);
 extern void unify_states(struct list **ll, int mc);
+extern wchar_t * get_text(struct state *s);
+extern int text_sorter(void *a, void *b);
 
 static void pattern_matches_no_vars_test(void **state)
 {
@@ -997,6 +999,160 @@ static void unify_states_test(void **rubbish)
     trie_done(d);
 }
 
+static void get_text_test(void **rubbish)
+{
+    setlocale(LC_ALL, "pl_PL.UTF8");
+    struct trie_node *d = trie_init();
+    trie_insert(d, L"c");
+    trie_insert(d, L"cd");
+    trie_insert(d, L"d");
+    struct trie_node *d1 = trie_get_child(d, L'c');
+    struct trie_node *d2 = trie_get_child(d1, L'd');
+    struct trie_node *d3 = trie_get_child(d, L'd');
+    
+    struct hint_rule *r[5];
+    r[0] = rule_make(L"ab", L"c", 1, RULE_END);
+    r[1] = rule_make(L"a", L"c", 1, RULE_NORMAL);
+    r[2] = rule_make(L"b", L"", 1, RULE_NORMAL);
+    r[3] = rule_make(L"", L"d", 1, RULE_NORMAL);
+    r[4] = rule_make(L"", L"", 1, RULE_SPLIT);
+    
+    struct list **l[5];
+    l[0] = list_init();
+    l[1] = list_init();
+    l[2] = list_init();
+    l[3] = list_init();
+    l[4] = list_init();
+    
+    const wchar_t *word = L"ab";
+    
+    struct state *s00 = mkstate(d, NULL, NULL, NULL, word);
+    struct state *s10 = mkstate(d1,NULL, s00, r[0], word + 2);
+    struct state *s11 = mkstate(d1,NULL, s00, r[1], word + 1);
+    struct state *s20 = mkstate(d1,NULL, s11, r[2], word + 2);
+    struct state *s21 = mkstate(d, d1,   s11, r[4], word + 1);
+    struct state *s30 = mkstate(d2,NULL, s20, r[3], word + 2);
+    struct state *s31 = mkstate(d, d1,   s21, r[2], word + 2);
+    struct state *s40 = mkstate(d3,d1,   s31, r[3], word + 2);
+    list_add(l[0], s00);
+    list_add(l[1], s10); list_add(l[1], s11);
+    list_add(l[2], s20); list_add(l[2], s21);
+    list_add(l[3], s30); list_add(l[3], s31);
+    list_add(l[4], s40);
+    
+    wchar_t *s;
+    
+    s = get_text(s00);
+    assert_true(wcscmp(s, L"")==0);
+    free(s);
+    
+    s = get_text(s10);
+    assert_true(wcscmp(s, L"c")==0);
+    free(s);
+    
+    s = get_text(s11);
+    assert_true(wcscmp(s, L"c")==0);
+    free(s);
+    
+    s = get_text(s20);
+    assert_true(wcscmp(s, L"c")==0);
+    free(s);
+    
+    s = get_text(s21);
+    assert_true(wcscmp(s, L"c ")==0);
+    free(s);
+    
+    s = get_text(s30);
+    assert_true(wcscmp(s, L"cd")==0);
+    free(s);
+    
+    s = get_text(s31);
+    assert_true(wcscmp(s, L"c ")==0);
+    free(s);
+    
+    s = get_text(s40);
+    assert_true(wcscmp(s, L"c d")==0);
+    free(s);
+    
+    free(s00);
+    free(s10);
+    free(s11);
+    free(s20);
+    free(s21);
+    free(s30);
+    free(s31);
+    // State s32 was removed by unification
+    free(s40);
+    
+    list_done(l[0]);
+    list_done(l[1]);
+    list_done(l[2]);
+    list_done(l[3]);
+    list_done(l[4]);
+    
+    rule_done(r[0]);
+    rule_done(r[1]);
+    rule_done(r[2]);
+    rule_done(r[3]);
+    rule_done(r[4]);
+    
+    trie_done(d);
+}
+
+static void text_sorter_test(void **state)
+{
+    const wchar_t *A = L"c";
+    const wchar_t *B = L"cd";
+    assert_true(text_sorter(&A, &B) != 0);
+}
+
+static void rule_generate_hints_test(void **state)
+{
+    setlocale(LC_ALL, "pl_PL.UTF8");
+    struct trie_node *d = trie_init();
+    trie_insert(d, L"c");
+    trie_insert(d, L"cd");
+    trie_insert(d, L"cdd");
+    trie_insert(d, L"dd");
+    struct trie_node *d1 = trie_get_child(d, L'c');
+    struct trie_node *d2 = trie_get_child(d1, L'd');
+    struct trie_node *d3 = trie_get_child(d, L'd');
+    
+    struct hint_rule *r[6];
+    r[0] = rule_make(L"ab", L"c", 1, RULE_END);
+    r[1] = rule_make(L"a", L"c", 1, RULE_NORMAL);
+    r[2] = rule_make(L"b", L"", 1, RULE_NORMAL);
+    r[3] = rule_make(L"", L"d", 1, RULE_NORMAL);
+    r[4] = rule_make(L"", L"", 1, RULE_SPLIT);
+    r[5] = NULL;
+    
+    struct list *l = rule_generate_hints(r, 10, 100, d, L"ab");
+    assert_int_equal(list_size(l), 9);
+    wchar_t **ss = (wchar_t **)list_get(l);
+    ///@todo Check if answers are correct.
+    assert_true(wcscmp(ss[0], L"c")==0);
+    assert_true(wcscmp(ss[1], L"cd")==0);
+    assert_true(wcscmp(ss[2], L"cdd")==0);
+    assert_true(wcscmp(ss[3], L"dd c")==0);
+    assert_true(wcscmp(ss[4], L"c dd")==0);
+    assert_true(wcscmp(ss[5], L"cd dd")==0);
+    assert_true(wcscmp(ss[6], L"dd cd")==0);
+    assert_true(wcscmp(ss[7], L"cdd dd")==0);
+    assert_true(wcscmp(ss[8], L"dd cdd")==0);
+    for(int i = 0; i < list_size(l); i++)
+    {
+        free(ss[i]);
+    }
+    list_done(l);
+    rule_done(r[0]);
+    rule_done(r[1]);
+    rule_done(r[2]);
+    rule_done(r[3]);
+    rule_done(r[4]);
+    
+    trie_done(d);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(pattern_matches_no_vars_test),
@@ -1032,6 +1188,9 @@ int main(void) {
         cmocka_unit_test(apply_rules_to_states_test),
         cmocka_unit_test(apply_rules_to_states_closed_state_test),
         cmocka_unit_test(unify_states_test),
+        cmocka_unit_test(get_text_test),
+        cmocka_unit_test(text_sorter_test),
+        cmocka_unit_test(rule_generate_hints_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

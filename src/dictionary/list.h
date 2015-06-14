@@ -124,4 +124,15 @@ void list_sort_and_unify(struct list* l, int (*f)(const void*, const void*), int
  * @param[in,out] l Lista.
  */
 void list_clear(struct list *l);
+
+/**
+ * Iteruje po wszystkich elementach listy.
+ * 
+ * @param[in] l Lista.
+ * @param[in] a Kontekst.
+ * @param[in] f Funkcja do wykonania.
+ */
+
+void list_iter(struct list *l, void *a, void (*f)(void *, void *));
+
 #endif /* DICTIONARY_LIST_H */

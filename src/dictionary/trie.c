@@ -49,18 +49,20 @@ struct trie_node
  */
 static int trie_node_integrity(const struct trie_node *node)
 {
-    if(node == NULL) return 0;
-    if(node->cnt > node->cap) return 0;
-    if(node->cap > 0 && node->chd == NULL) return 0;
-    if(node->cap == 0 && node->chd != NULL) return 0;
+    if(node == NULL) goto fail;
+    if(node->cnt > node->cap) goto fail;
+    if(node->cap > 0 && node->chd == NULL) goto fail;
+    if(node->cap == 0 && node->chd != NULL) goto fail;
     for(int i = 0; i < node->cnt; i++)
     {
         for(int j = 0; j < node->cnt; j++)
         {
-            if(i != j && node->chd[i] == node->chd[j]) return 0;
+            if(i != j && node->chd[i] == node->chd[j]) goto fail;
         }
     }
     return 1;
+fail:
+    return 0;
 }
 
 /**

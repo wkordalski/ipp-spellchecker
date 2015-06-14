@@ -104,9 +104,10 @@ size_t list_reserve(struct list *l, size_t s)
 {
     if(l->size > s) s = l->size;
     void **na = malloc(s * sizeof(void*));
-    memcpy(na, l->array, l->size);
+    memcpy(na, l->array, l->size * sizeof(void*));
     free(l->array);
     l->array = na;
+    l->capacity = s;
     return s;
 }
 
@@ -154,4 +155,12 @@ void list_sort_and_unify(struct list *l, int (*f)(const void*, const void*), int
 void list_clear(struct list *l)
 {
     l->size = 0;
+}
+
+void list_iter(struct list *l, void *a, void (*f)(void *, void*))
+{
+    for(int i = 0; i < l->size; i++)
+    {
+        f(l->array[i], a);
+    }
 }
