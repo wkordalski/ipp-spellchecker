@@ -111,6 +111,22 @@ size_t list_reserve(struct list *l, size_t s)
     return s;
 }
 
+size_t list_resize(struct list *l, size_t s, void *e)
+{
+    if(s <= l->size)
+    {
+        l->size = s;
+        return s;
+    }
+    else
+    {
+        list_reserve(l, s + 1);
+        for(int i = l->size; i < s; i++)
+            list_add(l, e);
+        return s;
+    }
+}
+
 void ** list_get(struct list *l)
 {
     return l->array;

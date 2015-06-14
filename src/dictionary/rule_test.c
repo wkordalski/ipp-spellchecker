@@ -1129,7 +1129,6 @@ static void rule_generate_hints_test(void **state)
     struct list *l = rule_generate_hints(r, 10, 100, d, L"ab");
     assert_int_equal(list_size(l), 9);
     wchar_t **ss = (wchar_t **)list_get(l);
-    ///@todo Check if answers are correct.
     assert_true(wcscmp(ss[0], L"c")==0);
     assert_true(wcscmp(ss[1], L"cd")==0);
     assert_true(wcscmp(ss[2], L"cdd")==0);

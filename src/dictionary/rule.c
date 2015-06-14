@@ -542,7 +542,8 @@ done:
     list_done(so);
     // Preprocessing data
     free_preprocessing_data(pp, wlen);
-    
+    if(list_size(output) > max_hints_no)
+        list_resize(output, max_hints_no, NULL);
     return output;
 }
 

@@ -94,6 +94,17 @@ size_t list_capacity(const struct list *l);
 size_t list_reserve(struct list *l, size_t s);
 
 /**
+ * Zmienia rozmiar listy.
+ * 
+ * @param[in] l Lista.
+ * @param[in] s Nowy rozmiar.
+ * @param[in] e Domyślny element.
+ * 
+ * @return Nowy rozmiar listy.
+ */
+size_t list_resize(struct list *l, size_t s, void *e);
+
+/**
   Zwraca tablicę elementów.
   @param[in] l Lista.
   @return Tablica z elementami.
