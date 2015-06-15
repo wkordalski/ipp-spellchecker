@@ -155,7 +155,7 @@ struct dictionary * dictionary_load_lang(const char *lang)
     fname[cp_len] = '/';
     memcpy(fname+cp_len+1, lang, lg_len);
     memcpy(fname+cp_len+1+lg_len, ".dict", 6);
-    FILE * f = fopen(fname, "w");
+    FILE * f = fopen(fname, "r");
     if(f == NULL) return NULL;
     struct dictionary *r = dictionary_load(f);
     fclose(f);
