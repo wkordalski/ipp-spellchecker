@@ -18,6 +18,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <cmocka.h>
+#include <wchar.h>
 
 /* Redirect assert to mock_assert() so assertions can be caught by cmocka. */
 #ifdef assert
@@ -69,6 +70,24 @@ int test_fgetc();
 #endif
 #define fgets(str, cnt, file) test_fgets(str, cnt)
 char* test_fgets(char *str, int cnt);
+
+extern wchar_t wbuff[1024];
+extern int wreadp;
+extern int wwritep;
+extern int wfilelen;
+
+#ifdef fputwc
+#undef fputwc
+#endif
+#define fputwc(char, file) test_fputwc(char)
+int test_fputwc(wchar_t c);
+
+#ifdef fgetwc
+#undef fgetwc
+#endif
+#define fgetwc(file) test_fgetwc()
+int test_fgetwc();
+
 
 /* All functions in this object need to be exposed to the test application,
  * so redefine static to nothing. */

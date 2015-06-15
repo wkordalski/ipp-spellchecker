@@ -436,6 +436,43 @@ static int trie_serialize_formatA(struct trie_node *root, struct char_map *map, 
 }
 
 /**
+ * Wypisuje do pliku instrukcje odpowiadające za reprezentację danego poddrzewa.
+ * 
+ * @param[in] node Poddrzewo, które mamy reprezentować.
+ * @param[in] file Plik, do którego zapisać wygenerowane instrukcje.
+ * 
+ * @return 0 jeśli zapisano z sukcesem, -1 w p.p.
+ */
+static int trie_serialize_formatU_helper(struct trie_node *node, FILE *file)
+{
+    assert(trie_node_integrity(node));
+    
+    if(fputwc(node->val, file)<0) return -1;
+    if(node->leaf)
+        if(fputwc(1, file)<0) return -1;
+    for(int i = 0; i < node->cnt; i++)
+        if(trie_serialize_formatU_helper(node->chd[i], file)<0) return -1;
+    if(fputwc(2, file)<0) return -1;
+    return 0;
+}
+
+/**
+ * Wypisuje do pliku instrukcje odpowiadające za reprezentację danego drzewa.
+ * 
+ * Drzewo zostanie zapisane w formacie "dictA".
+ * 
+ * @param[in] root Drzewo, które mamy reprezentować.
+ * @param[in] file Plik, do którego zapisać wygenerowane instrukcje.
+ */
+static int trie_serialize_formatU(struct trie_node *node, FILE *file)
+{
+    for(int i = 0; i < node->cnt; i++)
+        if(trie_serialize_formatU_helper(node->chd[i], file)<0) return -1;
+    if(fputwc(2, file)<0) return -1;
+    return 0;
+}
+
+/**
  * Wczytuje poddrzewo z pliku.
  * 
  * @param[in,out] node Korzeń podderzewa do wczytania.
@@ -544,6 +581,69 @@ static struct trie_node * trie_deserialize_formatA(FILE *file)
         if(cmd >= lcount) break;
     }
     free(translator);
+    assert(trie_node_integrity(root));
+    return root;
+}
+
+/**
+ * Wczytuje poddrzewo z pliku.
+ * 
+ * @param[in,out] node Korzeń podderzewa do wczytania.
+ * @param[in] file Strumień, z którego wczytać poddrzewo.
+ * 
+ * @return -1 jeśli błąd, 0 jeśli OK
+ */
+static int trie_deserialize_formatU_helper(struct trie_node *node, FILE *file)
+{
+    assert(trie_node_integrity(node));
+    while(1)
+    {
+        wchar_t cmd = fgetwc(file);
+        if(cmd <= 0) return -1;
+        // Obsługa różnych rodzajów instrukcji
+        if(cmd == 1) node->leaf = 1;
+        else if(cmd == 2) break;
+        else
+        {
+            // add letter
+            struct trie_node * child = trie_get_child_or_add_empty(node, cmd);
+            if(trie_deserialize_formatU_helper(child, file)<0) return -1;
+        }
+    }
+    assert(trie_node_integrity(node));
+    return 0;
+}
+
+/**
+ * Wczytuje drzewo z pliku.
+ * 
+ * @param[in] file Strumień, z którego wczytać poddrzewo.
+ * 
+ * @return Wczytane drzewo lub NULL jeśli błąd.
+ */
+static struct trie_node * trie_deserialize_formatU(FILE *file)
+{
+    struct trie_node *root = trie_init();
+    while(1)
+    {
+        wchar_t cmd = fgetwc(file);
+        if(cmd <= 1)
+        {
+            trie_done(root);
+            return NULL;
+        }
+        else if(cmd == 2) break;
+        else
+        {
+            // add letter
+            struct trie_node * child = trie_get_child_or_add_empty(root, cmd);
+            if(trie_deserialize_formatU_helper(child, file)<0)
+            {
+                trie_done(root);
+                return NULL;
+            }
+        }
+    }
     assert(trie_node_integrity(root));
     return root;
 }
