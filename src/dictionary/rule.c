@@ -5,7 +5,7 @@
     @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
             
     @copyright Uniwerstet Warszawski
-    @date 2015-06-03
+    @date 2015-06-15
  */
 
 #include "dictionary.h"
@@ -18,6 +18,9 @@
 
 #include "../testable.h"
 
+/**
+ * Reguła podpowiadania słów z drzewa.
+ */
 struct hint_rule
 {
     wchar_t *src;               ///< Wzorzec do zastąpienia.
@@ -26,22 +29,39 @@ struct hint_rule
     enum rule_flag flag;        ///< Flagi reguły.
 };
 
+/**
+ * Stan algorytmu generującego podpowiedzi.
+ */
 struct state
 {
     const wchar_t *suf;               ///< Sufiks do poprawienia
     const struct trie_node * node;    ///< Aktualny węzeł w słowniku
     const struct trie_node * prev;    ///< NULL jeśli nie ma poprzedniego słowa lub wskaźnik na poprzednie słowo
-    struct state *prnt;         ///< Poprzedni stan
-    struct hint_rule *rule;     ///< Reguła wykorzystana do przejścia z poprzedniego do aktualnego stanu.
-    wchar_t free_variable;      ///< Wartość po prawej stronie reguły, która mogła być dowolna.
+    struct state *prnt;               ///< Poprzedni stan
+    struct hint_rule *rule;           ///< Reguła wykorzystana do przejścia z poprzedniego do aktualnego stanu.
+    wchar_t free_variable;            ///< Wartość po prawej stronie reguły, która mogła być dowolna.
 };
 
+/**
+ * Stan algorytmu generującego podpowiedzi uzupełniony o informację o aktualnym koszcie
+ */
 struct costed_state
 {
-    struct state *s;
-    int cost;
+    struct state *s;                    ///< Stan bazowy
+    int cost;                           ///< Koszt stanu
 };
 
+/** @name Funkcje pomocnicze
+ * @{
+ */
+
+/**
+ * Porządek częściowy na stanach.
+ * @param[in] a Wskaźnik na wskaźnik na pierwszy stan.
+ * @param[in] b Wskaźnik na wskaźnik na drugi stan.
+ * @return 0 jeśli są równe, liczbę dodatnią lub ujemną
+ * jeśli odpowiednio pierwszy stan jest większy od drugiego lub drugi od pierwszego.
+ */
 static int state_sorter(const void *a, const void *b)
 {
     struct state *A = *(struct state**)a;
@@ -55,6 +75,15 @@ static int state_sorter(const void *a, const void *b)
     return alen - blen;
 }
 
+/**
+ * Porządek częściowy na stanach wzbogaconych o koszty.
+ * Sortujemy najpierw po stanie bazowym, a potem po koszcie.
+ * 
+ * @param[in] a Wskaźnik na wskaźnik na pierwszy stan.
+ * @param[in] b Wskaźnik na wskaźnik na drugi stan.
+ * @return 0 jeśli są równe, liczbę dodatnią lub ujemną jeśli
+ * odpowiednio pierwszy stan jest większy od drugiego lub drugi od pierwszego.
+ */
 static int costed_state_sorter(const void *a, const void *b)
 {
     struct costed_state *A = *(struct costed_state**)a;
@@ -64,6 +93,15 @@ static int costed_state_sorter(const void *a, const void *b)
     else return A->cost - B->cost;
 }
 
+/**
+ * Porównuje stany wzbogacone o koszty.
+ * Stany te są równe jeśli stany bazowe są równe.
+ * Czyli wywołanie state_sorter zwraca 0.
+ * 
+ * @param[in] a Wskaźnik na wskaźnik na pierwszy stan.
+ * @param[in] b Wskaźnik na wskaźnik na drugi stan.
+ * @return 0 jeśli są równe, cokolwiek niezerowego w p.p.
+ */
 static int costed_state_comparer(const void *a, const void *b)
 {
     struct costed_state *A = *(struct costed_state**)a;
@@ -71,6 +109,14 @@ static int costed_state_comparer(const void *a, const void *b)
     return state_sorter(&(A->s), &(B->s));
 }
 
+/**
+ * Próbuje przypasować wzorzec do tekstu.
+ * 
+ * @param[in] pattern Wzorzec.
+ * @param[in] text Tekst.
+ * @param[in,out] memory Pamięć, gdzie zapisać przypisania wartości do zmiennych.
+ * @return True jeśli udało się dopasować, false w p.p.
+ */
 static bool pattern_matches(const wchar_t *pattern, const wchar_t *text, wchar_t memory[10])
 {
     for(int i = 0; i < 10; i++) memory[i] = 0;
@@ -100,6 +146,13 @@ static bool pattern_matches(const wchar_t *pattern, const wchar_t *text, wchar_t
     return true;
 }
 
+/**
+ * Zamienia literę z tekstu zastępczego na właściwą literę uwzględniając zmienne.
+ * 
+ * @param[in] c Znak z tekstu zastępczego.
+ * @param[in] memory Pamięć z przypisaniem zmiennych.
+ * @return Wynikowa litera.
+ */
 static wchar_t translate_letter(wchar_t c, wchar_t memory[10])
 {
     if(iswalpha(c)) return c;
@@ -111,6 +164,15 @@ static wchar_t translate_letter(wchar_t c, wchar_t memory[10])
     return -1;
 }
 
+/**
+ * Porządek częściowy na regułach do sortowania po koszcie.
+ * 
+ * @param[in] a Wskaźnik na wskaźnik na pierwszą regułę.
+ * @param[in] b Wskaźnik na wskaźnik na drugą regułę.
+ * @return 0 jeśli koszty są równe, liczba dodatnia lub ujemna
+ * jeśli odpowiednio pierwsza reguła jest droższa od drugiej
+ * lub druga od pierwszej.
+ */
 static int rule_cost_sorter(const void *a, const void *b)
 {
     struct hint_rule *A = *(struct hint_rule**)a;
@@ -118,7 +180,16 @@ static int rule_cost_sorter(const void *a, const void *b)
     return A->cost - B->cost;
 }
 
-// rule*[cost][idx]
+/**
+ * Wykonuje preprocessing przed generacją podpowiedzi dla danego sufiksu.
+ * 
+ * @param[in] rules NULL-terminated lista wskaźników na reguły.
+ * @param[in] rcnt Liczba reguł na liście.
+ * @param[in] word Sufiks.
+ * @param[in] begin Czy sufiks jest całym słowem do wygenerowania podpowiedzi.
+ * @return Wskaźnik na tablicę list wskaźników na reguły.
+ * Tablica jest indeksowana po kosztach reguł.
+ */
 static struct hint_rule *** preprocess_suffix(struct hint_rule **rules, int rcnt, const wchar_t *word, bool begin)
 {
     // Sprawdzić, które reguły pasują
@@ -178,7 +249,14 @@ static struct hint_rule *** preprocess_suffix(struct hint_rule **rules, int rcnt
     return output;
 }
 
-// rule*[sufix][cost][idx]
+/**
+ * Wykonuje preprocessing dla danego słowa.
+ * 
+ * @param[in] rules NULL-terminated lista reguł.
+ * @param[in] word Słowo do wygenerowania podpowiedzi.
+ * @return Wskaźnik na dwuwymiarową tablicę list wskaźników na reguły.
+ * Tablica jest indeksowana po 1. długości sufiksu, 2. koszcie reguł.
+ */
 static struct hint_rule **** preprocess(struct hint_rule **rules, const wchar_t *word)
 {
     int rcnt = 0;
@@ -198,6 +276,11 @@ static struct hint_rule **** preprocess(struct hint_rule **rules, const wchar_t 
     return output;
 }
 
+/**
+ * Zwalnia pamięć zaalokowaną przez preprocess_suffix.
+ * 
+ * @param[in] pp Wskaźnik zwrócony przez tą funkcję.
+ */
 static void free_preprocessing_data_for_suffix(struct hint_rule ***pp)
 {
     for(struct hint_rule ***it = pp; *it != NULL; it++)
@@ -207,6 +290,12 @@ static void free_preprocessing_data_for_suffix(struct hint_rule ***pp)
     free(pp);
 }
 
+/**
+ * Zwalnia pamięć zaalokowaną przez preprocess.
+ * 
+ * @param[in] pp Wskaźnik zwrócony przez tą funkcję.
+ * @param[in] wlen Długość słowa, dla którego szukaliśmy podpowiedzi.
+ */
 static void free_preprocessing_data(struct hint_rule ****pp, int wlen)
 {
     for(int i = 0; i <= wlen; i++)
@@ -216,22 +305,12 @@ static void free_preprocessing_data(struct hint_rule ****pp, int wlen)
     free(pp);
 }
 
-struct hint_rule * rule_make(wchar_t *src, wchar_t *dst, int cost, enum rule_flag flag)
-{
-    struct hint_rule *rule = malloc(sizeof(struct hint_rule));
-    rule->src = src;
-    rule->dst = dst;
-    rule->cost = cost;
-    rule->flag = flag;
-    return rule;
-}
-
-void rule_done(struct hint_rule *rule)
-{
-    free(rule);
-}
-
-
+/**
+ * Dodaje stany pochodne bez użycia reguł.
+ * 
+ * @param[in] s Stan do rozwinięcia.
+ * @return Lista stanów pochodnych o tym samym koszcie.
+ */
 static struct list * extend_state(struct state *s)
 {
     struct list * ret = list_init();
@@ -252,6 +331,19 @@ static struct list * extend_state(struct state *s)
     }
 }
 
+/**
+ * Próbuje zaaplikować regułę do stanu. Funkcja pomocnicza.
+ * 
+ * @param[in] n Aktualny węzeł drzewa TRIE.
+ * @param[in] dst Sufiks tekstu zastępczego.
+ * @param[in,out] memory Pamięć dla zmiennych w regule.
+ * @param[in,out] l Lista do której dodać uzyskane stany.
+ * @param[in] ps Stan źródłowy.
+ * @param[in] r Zastosowana reguła.
+ * @param[in] suf Sufiks tekstu do zastąpienia.
+ * @param[in] root Korzeń drzewa TRIE.
+ * @param[in] last_guessed Wartość ostatniej wolnej zmiennej.
+ */
 static void explore_trie(const struct trie_node *n,
                          wchar_t *dst,
                          wchar_t memory[10],
@@ -314,6 +406,14 @@ static void explore_trie(const struct trie_node *n,
     }
 }
 
+/**
+ * Próbuje zaaplikować regułę do stanu.
+ * 
+ * @param[in] s Stan.
+ * @param[in] r Reguła.
+ * @param[in] root Korzeń drzewa TRIE.
+ * @return Lista stanów pochodnych.
+ */
 static struct list * apply_rule(struct state *s, struct hint_rule *r, const struct trie_node *root)
 {
     wchar_t memory[10];
@@ -323,6 +423,15 @@ static struct list * apply_rule(struct state *s, struct hint_rule *r, const stru
     return ret;
 }
 
+/**
+ * Próbuje zaaplikować reguły do stanów.
+ * 
+ * @param[in] s Lista stanów.
+ * @param[in] c Koszt reguły do zastosowania.
+ * @param[in] root Korzeń drzewa TRIE.
+ * @param[in] pp Wynik preprocessingu.
+ * @return Lista stanów pochodnych.
+ */
 static struct list * apply_rules_to_states(struct list *s, int c, const struct trie_node *root, struct hint_rule ****pp)
 {
     struct state ** sts = (struct state**)list_get(s);
@@ -358,6 +467,12 @@ static struct list * apply_rules_to_states(struct list *s, int c, const struct t
     return ret;
 }
 
+/**
+ * Usuwa duplikaty stanów.
+ * 
+ * @param[in,out] ll Tablica list stanów. Każda lista przechowuje stany o innej wartości.
+ * @param[in] mc Maksymalny koszt jaki uwzględnić.
+ */
 static void unify_states(struct list **ll, int mc)
 {
     struct list *ret = list_init();
@@ -399,16 +514,32 @@ static void unify_states(struct list **ll, int mc)
     list_done(ret);
 }
 
+/**
+ * Porównuje w-stringi alfabetycznie.
+ * 
+ * @param[in] a Wskaźnik na pierwszy tekst.
+ * @param[in] b Wskaźnik na drugi tekst.
+ * @return 0 jeśli są równe, liczbę dodatnią lub ujemną
+ * jeśli odpowiednio pierwszy tekst jest większy od drugiego lub drugi od pierwszego.
+ */
 static int locale_sorter(const void *a, const void *b)
 {
     return wcscoll(*(const wchar_t**)a, *(const wchar_t**)b);
 }
 
+/**
+ * Oblicza tekst wygenerowany przez stan. Funkcja pomocnicza.
+ * 
+ * @param[in] s Aktualny stan.
+ * @param[in] l Lista, gdzie zapisać wynik.s
+ * @param[in] prev Wskaźnik w drzewie TRIE wskazujący na pierwszy wyraz słowa jeśli istniały dwa.
+ */
 static void get_text_helper(struct state *s, struct list *l, const struct trie_node *prev)
 {
     if(s->prnt == NULL) return;
     get_text_helper(s->prnt, l, prev);
-        
+    
+    if(trie_get_value(s->node) == 0 && s->prnt != NULL && s->prnt->node == prev) list_add(l, NULL);
     if(s->rule == NULL)
     {
         list_add(l, (void*)trie_get_value_ptr(s->node));
@@ -428,9 +559,14 @@ static void get_text_helper(struct state *s, struct list *l, const struct trie_n
             dst++;
         }
     }
-    if(s->node == prev) list_add(l, NULL);  // Spacja
 }
 
+/**
+ * Oblicza tekst wygenerowany przez stan. Funkcja pomocnicza.
+ * 
+ * @param[in] s Stan.
+ * @return Tekst.
+ */
 static wchar_t * get_text(struct state *s)
 {
     struct list *l = list_init();
@@ -447,6 +583,14 @@ static wchar_t * get_text(struct state *s)
     return rt;
 }
 
+/**
+ * Porównuje w-stringi po wartościach znaków.
+ * 
+ * @param[in] a Wskaźnik na pierwszy tekst.
+ * @param[in] b Wskaźnik na drugi tekst.
+ * @return 0 jeśli są równe, liczbę dodatnią lub ujemną
+ * jeśli odpowiednio pierwszy tekst jest większy od drugiego lub drugi od pierwszego.
+ */
 static int text_sorter(void *a, void *b)
 {
     wchar_t *A = *(wchar_t**)a;
@@ -458,6 +602,31 @@ static int text_sorter(void *a, void *b)
     }
     return *A - *B;
 }
+
+/**
+ * @}
+ */
+
+/**
+ * @name Elementy interfejsu.
+ * @{
+ */
+
+struct hint_rule * rule_make(wchar_t *src, wchar_t *dst, int cost, enum rule_flag flag)
+{
+    struct hint_rule *rule = malloc(sizeof(struct hint_rule));
+    rule->src = src;
+    rule->dst = dst;
+    rule->cost = cost;
+    rule->flag = flag;
+    return rule;
+}
+
+void rule_done(struct hint_rule *rule)
+{
+    free(rule);
+}
+
 
 struct list * rule_generate_hints(struct hint_rule **rules, int max_cost, int max_hints_no, struct trie_node *root, const wchar_t *word)
 {
@@ -547,3 +716,6 @@ done:
     return output;
 }
 
+/**
+ * @}
+ */

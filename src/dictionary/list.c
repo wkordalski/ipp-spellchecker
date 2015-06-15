@@ -5,7 +5,7 @@
     @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
             
     @copyright Uniwerstet Warszawski
-    @date 2015-06-03
+    @date 2015-06-15
  */
 
 #include "list.h"
@@ -18,13 +18,15 @@
  */
 struct list
 {
-    /// Liczba słów.
-    size_t size;
-    /// Pojemność tablicy
-    size_t capacity;
-    /// Tablica słów.
-    void **array;
+    size_t size;            ///< Liczba słów.
+    size_t capacity;        ///< Pojemność tablicy
+    void **array;           ///< Tablica słów.
 };
+
+/**
+ * @name Elementy interfejsu
+ * @{
+ */
 
 struct list * list_init()
 {
@@ -180,3 +182,7 @@ void list_iter(struct list *l, void *a, void (*f)(void *, void*))
         f(l->array[i], a);
     }
 }
+
+/**
+ * @}
+ */

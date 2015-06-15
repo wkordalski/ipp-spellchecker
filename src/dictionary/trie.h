@@ -5,7 +5,7 @@
     @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
             
     @copyright Uniwerstet Warszawski
-    @date 2015-06-03
+    @date 2015-06-15
  */
 
 #ifndef __TRIE_H__
@@ -20,8 +20,9 @@ struct trie_node;
 /*
  * Includes.
  */
-#include "word_list.h"
+#include "list.h"
 #include "rule.h"
+#include "word_list.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,7 +136,10 @@ bool trie_is_leaf(const struct trie_node *node);
  * @param[in] root Drzewo do przeszukania.
  * @param[in] word Słowo wzorcowe, do którego znaleźć podobne.
  * @param[out] list Lista słów podobnych.
+ * @param[in] rules Lista reguł, które można zastosować.
+ * @param[in] max_cost Maksymalny możliwy koszt podpowiedzi.
+ * @param[in] max_hints_no Maksymalna liczba podpowiedzi.
  */
-void trie_hints(struct trie_node* root, const wchar_t* word, struct word_list* list, struct hint_rule** rules);
+void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list, struct list *rules, int max_cost, int max_hints_no);
 
 #endif /* __TRIE_H__ */

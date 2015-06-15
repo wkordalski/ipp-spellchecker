@@ -7,12 +7,15 @@
           Wojciech Kordalski <wojtek.kordalski@gmail.com>
           
   @copyright Uniwerstet Warszawski
-  @date 2015-05-23
+  @date 2015-06-15
  */
 
-#include "dictionary.h"
-#include "trie.h"
 #include "conf.h"
+#include "dictionary.h"
+#include "list.h"
+#include "rule.h"
+#include "trie.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,7 +32,8 @@
 struct dictionary
 {
     struct trie_node *root;      ///< Korzeń drzewa TRIE
-    ///@todo Dodać listę reguł
+    int max_cost;                ///< Maksymalny koszt podpowiedzi.
+    struct list *rules;          ///< Lista reguł podpowiedzi.
 };
 
 /** @name Funkcje pomocnicze
@@ -101,8 +105,7 @@ void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
         struct word_list *list)
 {
     word_list_init(list);
-    ///@todo Porawne wywoływanie trie_hints
-    //trie_hints(dict->root, word, list);
+    trie_hints(dict->root, word, list, dict->rules, dict->max_cost, DICTIONARY_MAX_HINTS);
 }
 
 

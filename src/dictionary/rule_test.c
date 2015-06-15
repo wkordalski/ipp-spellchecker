@@ -5,7 +5,7 @@
   @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
           
   @copyright Uniwerstet Warszawski
-  @date 2015-05-31
+  @date 2015-06-15
  */
 
 #include <locale.h>
@@ -18,20 +18,20 @@
 
 struct hint_rule
 {
-    wchar_t *src;               ///< Wzorzec do zastąpienia.
-    wchar_t *dst;               ///< Tekst, którym zastąpić wzorzec.
-    int cost;                   ///< Koszt użycia reguły.
-    enum rule_flag flag;        ///< Flagi reguły.
+    wchar_t *src;
+    wchar_t *dst;
+    int cost;
+    enum rule_flag flag;
 };
 
 struct state
 {
-    const wchar_t *suf;               ///< Sufiks do poprawienia
-    const struct trie_node * node;    ///< Aktualny węzeł w słowniku
-    const struct trie_node * prev;    ///< NULL jeśli nie ma poprzedniego słowa lub wskaźnik na poprzednie słowo
-    struct state *prnt;         ///< Poprzedni stan
-    struct hint_rule *rule;     ///< Reguła wykorzystana do przejścia z poprzedniego do aktualnego stanu.
-    wchar_t free_variable;      ///< Wartość po prawej stronie reguły, która mogła być dowolna.
+    const wchar_t *suf;
+    const struct trie_node * node;
+    const struct trie_node * prev;
+    struct state *prnt;
+    struct hint_rule *rule;
+    wchar_t free_variable;
 };
 
 struct costed_state
@@ -55,6 +55,7 @@ extern void unify_states(struct list **ll, int mc);
 extern wchar_t * get_text(struct state *s);
 extern int text_sorter(void *a, void *b);
 
+/// Sprawdza dopasowanie wzorca bez zmiennych.
 static void pattern_matches_no_vars_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -65,6 +66,7 @@ static void pattern_matches_no_vars_test(void **state)
     assert_false(pattern_matches(L"paragraf", L"parapet", memory));
 }
 
+/// Sprawdza dopasowanie wzorca ze zmienną.
 static void pattern_matches_jocker_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -77,6 +79,7 @@ static void pattern_matches_jocker_test(void **state)
     assert_false(pattern_matches(L"p6aw3a", L"prawdę", memory));
 }
 
+/// Sprawdza dopasowanie wzorca z ustaloną zmienną.
 static void pattern_matches_constrained_jocker_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -87,6 +90,7 @@ static void pattern_matches_constrained_jocker_test(void **state)
     assert_false(pattern_matches(L"wsp0ni0ł0", L"wspaniały", memory));
 }
 
+/// Sprawdza tłumaczenie liter dla litery.
 static void translate_letter_alpha_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -97,6 +101,7 @@ static void translate_letter_alpha_test(void **state)
     assert_int_equal(translate_letter(L'ć', memory), L'ć');
     
 }
+/// Sprawdza tłumaczenie liter dla zmiennej.
 static void translate_letter_jocker_1_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -106,6 +111,7 @@ static void translate_letter_jocker_1_test(void **state)
     assert_int_equal(translate_letter(L'7', memory), L'p');
     assert_int_equal(translate_letter(L'9', memory), L'r');
 }
+/// Sprawdza tłumaczenie liter dla zmiennej.
 static void translate_letter_jocker_2_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -121,6 +127,7 @@ static void translate_letter_jocker_2_test(void **state)
     assert_int_equal(translate_letter(L'8', memory), L'f');
     assert_int_equal(translate_letter(L'9', memory), L'g');
 }
+/// Sprawdza tłumaczenie liter dla syfu.
 static void translate_letter_junk_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -130,7 +137,7 @@ static void translate_letter_junk_test(void **state)
     assert_int_equal(translate_letter(L'&', memory), -1);
     assert_int_equal(translate_letter(L'-', memory), -1);
 }
-
+/// Sprawdza tłumaczenie liter dla nieustalonej zmiennej.
 static void translate_letter_unset_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -146,7 +153,7 @@ static void translate_letter_unset_test(void **state)
     assert_int_equal(translate_letter(L'8', memory), 8);
     assert_int_equal(translate_letter(L'9', memory), 9);
 }
-
+/// Testuje tworzenie i usuwanie reguł.
 static void rule_make_done_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -157,7 +164,7 @@ static void rule_make_done_test(void **state)
     assert_int_equal(r->flag, RULE_SPLIT);
     rule_done(r);
 }
-
+/// Testuje preprocessing (test bez reguł).
 static void preprocess_suffix_no_rule_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -168,7 +175,7 @@ static void preprocess_suffix_no_rule_test(void **state)
     free_preprocessing_data_for_suffix(output);
     free(rules);
 }
-
+/// Testuje preprocessing (test z niepasującą regułą).
 static void preprocess_suffix_one_unmatching_rule_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -182,6 +189,7 @@ static void preprocess_suffix_one_unmatching_rule_test(void **state)
     free(rules);
 }
 
+/// Testuje preprocessing (test z pasującą regułą).
 static void preprocess_suffix_one_matching_rule_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -204,7 +212,7 @@ static void preprocess_suffix_one_matching_rule_test(void **state)
     rule_done(rules[0]);
     free(rules);
 }
-
+/// Testuje preprocessing (test z pasującymi regułami).
 static void preprocess_suffix_some_samecost_rules_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -234,7 +242,7 @@ static void preprocess_suffix_some_samecost_rules_test(void **state)
     rule_done(rules[2]);
     free(rules);
 }
-
+/// Testuje preprocessing (test z pasującymi regułami).
 static void preprocess_suffix_some_multicost_rules_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -268,7 +276,7 @@ static void preprocess_suffix_some_multicost_rules_test(void **state)
     rule_done(rules[3]);
     free(rules);
 }
-
+/// Testuje preprocessing (test z regułą z flagą begin).
 static void preprocess_suffix_begin_flag_1_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -281,7 +289,7 @@ static void preprocess_suffix_begin_flag_1_test(void **state)
     rule_done(rules[0]);
     free(rules);
 }
-
+/// Testuje preprocessing (test z regułą z flagą begin).
 static void preprocess_suffix_begin_flag_2_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -299,7 +307,7 @@ static void preprocess_suffix_begin_flag_2_test(void **state)
     rule_done(rules[0]);
     free(rules);
 }
-
+/// Testuje preprocessing (test z regułą z flagą end).
 static void preprocess_suffix_end_flag_1_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -312,7 +320,7 @@ static void preprocess_suffix_end_flag_1_test(void **state)
     rule_done(rules[0]);
     free(rules);
 }
-
+/// Testuje preprocessing (test z regułą z flagą end).
 static void preprocess_suffix_end_flag_2_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -330,7 +338,7 @@ static void preprocess_suffix_end_flag_2_test(void **state)
     rule_done(rules[0]);
     free(rules);
 }
-
+/// Testuje rozwijanie stanu.
 static void extend_state_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -381,7 +389,7 @@ static void extend_state_test(void **rubbish)
     list_done(l);
     trie_done(d);
 }
-
+/// Testuje funkcję pomocniczą aplikującą regułę.
 static void explore_trie_noway_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -409,7 +417,7 @@ static void explore_trie_noway_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję pomocniczą aplikującą regułę.
 static void explore_trie_letter_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -446,7 +454,7 @@ static void explore_trie_letter_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję pomocniczą aplikującą regułę.
 static void explore_trie_constrained_jocker_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -484,7 +492,7 @@ static void explore_trie_constrained_jocker_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję pomocniczą aplikującą regułę (test z wolną zmienną).
 static void explore_trie_oneway_jocker_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -522,7 +530,7 @@ static void explore_trie_oneway_jocker_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję pomocniczą aplikującą regułę (test z wolną zmienną).
 static void explore_trie_multiway_jocker_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -571,7 +579,7 @@ static void explore_trie_multiway_jocker_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję pomocniczą aplikującą regułę (test z wolną zmienną).
 static void explore_trie_self_constraint_jocker_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -611,7 +619,7 @@ static void explore_trie_self_constraint_jocker_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję pomocniczą aplikującą regułę (test z regułą kończącą).
 static void explore_trie_end_rule_1_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -641,7 +649,7 @@ static void explore_trie_end_rule_1_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję pomocniczą aplikującą regułę (test z regułą kończącą).
 static void explore_trie_end_rule_2_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -679,7 +687,7 @@ static void explore_trie_end_rule_2_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję pomocniczą aplikującą regułę (test z regułą dzielącą).
 static void explore_trie_split_rule_1_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -709,7 +717,7 @@ static void explore_trie_split_rule_1_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję pomocniczą aplikującą regułę (test z regułą dzielącą).
 static void explore_trie_split_rule_2_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -747,7 +755,7 @@ static void explore_trie_split_rule_2_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję aplikującą regułę do stanu.
 static void apply_rule_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -784,7 +792,7 @@ static void apply_rule_test(void **rubbish)
     rule_done(r);
     trie_done(d);
 }
-
+/// Testuje funkcję aplikującą reguły do stanów.
 static void apply_rules_to_states_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -863,6 +871,7 @@ static void apply_rules_to_states_test(void **rubbish)
     trie_done(d);
 }
 
+/// Testuje funkcję aplikującą reguły do stanów.
 static void apply_rules_to_states_closed_state_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -906,6 +915,15 @@ static void apply_rules_to_states_closed_state_test(void **rubbish)
     trie_done(d);
 }
 
+/**
+ * Tworzy stan.
+ * @param[in] n Aktualny węzeł drzewa.
+ * @param[in] m Węzeł reprezentujący poprzednie słowo.
+ * @param[in] p Poprzedni stan.
+ * @param[in] r Użyta reguła.
+ * @param[in] suf Sufiks.
+ * @return Wskaźnik na stan.
+ */
 static struct state * mkstate(const struct trie_node *n, const struct trie_node *m, struct state *p, struct hint_rule *r, const wchar_t *suf)
 {
     struct state *s = malloc(sizeof(struct state));
@@ -917,6 +935,7 @@ static struct state * mkstate(const struct trie_node *n, const struct trie_node 
     return s;
 }
 
+/// Testuje usuwanie duplikatów stanów.
 static void unify_states_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -999,6 +1018,7 @@ static void unify_states_test(void **rubbish)
     trie_done(d);
 }
 
+/// Testuje zamianę stanu na tekst.
 static void get_text_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -1099,6 +1119,7 @@ static void get_text_test(void **rubbish)
     trie_done(d);
 }
 
+/// Testuje funkcję porównującą teksty.
 static void text_sorter_test(void **state)
 {
     const wchar_t *A = L"c";
@@ -1106,6 +1127,7 @@ static void text_sorter_test(void **state)
     assert_true(text_sorter(&A, &B) != 0);
 }
 
+/// Testuje generowanie podpowiedzi.
 static void rule_generate_hints_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
@@ -1152,6 +1174,7 @@ static void rule_generate_hints_test(void **state)
     trie_done(d);
 }
 
+/// Uruchamia testy.
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(pattern_matches_no_vars_test),

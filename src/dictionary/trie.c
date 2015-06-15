@@ -759,10 +759,10 @@ bool trie_is_leaf(const struct trie_node *node)
     return node->leaf;
 }
 
-void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list, struct hint_rule **rules)
+void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list, struct list *rules, int max_cost, int max_hints_no)
 {
     assert(trie_node_integrity(root));
-    struct list *output = rule_generate_hints(rules, 10 /**<@todo*/, 10 /**<@todo*/, root, word);
+    struct list *output = rule_generate_hints((struct hint_rule**)list_get(rules), max_cost, max_hints_no, root, word);
     for(int i = 0; i < list_size(output); i++)
     {
         word_list_add(list, list_get(output)[i]);

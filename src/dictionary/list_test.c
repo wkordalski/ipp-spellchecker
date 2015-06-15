@@ -5,7 +5,7 @@
   @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
           
   @copyright Uniwerstet Warszawski
-  @date 2015-05-31
+  @date 2015-06-15
  */
 
 #include <stdarg.h>
@@ -15,6 +15,12 @@
 #include <cmocka.h>
 #include "list.h"
 
+/**
+ * Porównuje liczby.
+ * @param[in] a Wskaźnik na wskaźnik na pierwszą liczbę.
+ * @param[in] b Wskaźnik na wskaźnik na drugą liczbę.
+ * @return Wynik porównania.
+ */
 static int sorter(const void *a, const void *b)
 {
     int *A = *(int **)a;
@@ -22,6 +28,12 @@ static int sorter(const void *a, const void *b)
     return *A - *B;
 }
 
+/**
+ * Porównuje liczby nie uwzględniając jedności.
+ * @param[in] a Wskaźnik na wskaźnik na pierwszą liczbę.
+ * @param[in] b Wskaźnik na wskaźnik na drugą liczbę.
+ * @return Wynik porównania.
+ */
 static int comparer(const void *a, const void *b)
 {
     int *A = *(int **)a;
@@ -29,6 +41,12 @@ static int comparer(const void *a, const void *b)
     return *A/10 - *B/10;
 }
 
+/**
+ * Alokuje liczy na stercie.
+ * 
+ * @param[in] v Wartość liczby.
+ * @return Wskaźnik na liczbę.
+ */
 static int * intptr(int v)
 {
     int *p = malloc(sizeof(int));
@@ -36,6 +54,9 @@ static int * intptr(int v)
     return p;
 }
 
+/**
+ * Testuje dodawanie listy do listy.
+ */
 static int list_add_list_test(void **rubbish)
 {
     int *a = intptr(21);
@@ -90,6 +111,9 @@ static int list_add_list_test(void **rubbish)
     list_done(y);
 }
 
+/**
+ * Testuje rezerwacje pojemności w liście (pojemność wzrośnie).
+ */
 static void list_reserve_grow_test(void **rubbish)
 {
     struct list *l = list_init();
@@ -99,6 +123,9 @@ static void list_reserve_grow_test(void **rubbish)
     list_done(l);
 }
 
+/**
+ * Testuje rezerwację pojemności w liście (nastąpi skopiowanie listy).
+ */
 static void list_reserve_copy_test(void **rubbish)
 {
     int *a = intptr(21);
@@ -129,7 +156,9 @@ static void list_reserve_copy_test(void **rubbish)
     list_done(x);
 }
 
-
+/**
+ * Testuje sortowanie listy i usuwanie duplikatów.
+ */
 static void list_sort_and_unify_test(void **rubbish)
 {
     int *a = intptr(21);
@@ -186,6 +215,7 @@ static void list_sort_and_unify_test(void **rubbish)
     list_done(k);
 }
 
+/// Główna funkcja testująca.
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(list_add_list_test),
