@@ -90,6 +90,9 @@ int main (int argc, char *argv[]) {
   gtk_main();
 
   return 0;  // for stupid compilers
+             // which want integer being returned
+             // when the function is declared
+             // as integer value returning
 }
 
 /*EOF*/

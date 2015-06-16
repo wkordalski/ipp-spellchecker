@@ -46,33 +46,9 @@ void show_help (void) {
 //
 // Oczywiście do zastąpienia prawdziwymi funkcjami
 
-struct dictionary {
-  int foo;
-} dict; 
+#include "dictionary.h"
 
-gboolean dictionary_find(const struct dictionary *dict, const wchar_t* word) {
-  // Parametr przekazany, wracamy do UTF-8
-  char *uword = g_ucs4_to_utf8((gunichar *)word, -1, NULL, NULL, NULL);
-  gboolean result; 
-
-  result = (strcmp(uword, "óroda") != 0);
-  g_free(uword);
-  return result;
-}
-
-void dictionary_hints (const struct dictionary *dict, const wchar_t* word,
-                       struct word_list *list) {
-  char *hints[] = {"broda", "środa", "uroda"};
-  int i;
-
-  word_list_init(list);
-  for (i = 0; i < 3; i++) {
-    wchar_t *item = (wchar_t *)g_utf8_to_ucs4_fast(hints[i], -1, NULL);
-
-    word_list_add(list, item);
-    g_free(item);
-  }
-}
+struct dictionary *dict = NULL;
 
 // Procedurka obsługi
 
@@ -106,7 +82,7 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
   wword = g_utf8_to_ucs4_fast(word, -1, NULL);
 
   // Sprawdzamy
-  if (dictionary_find(&dict, (wchar_t *)wword)) {
+  if (dictionary_find(dict, (wchar_t *)wword)) {
     dialog = gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
                                     "Wszystko w porządku,\nśpij spokojnie");
     gtk_dialog_run(GTK_DIALOG(dialog));
@@ -119,13 +95,15 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
     int i;
     wchar_t **words;
 
-    dictionary_hints(&dict, (wchar_t *)wword, &hints);
+    dictionary_hints(dict, (wchar_t *)wword, &hints);
     words = word_list_get(&hints);
     dialog = gtk_dialog_new_with_buttons("Korekta", NULL, 0, 
                                          GTK_STOCK_OK,
                                          GTK_RESPONSE_ACCEPT,
                                          GTK_STOCK_CANCEL,
                                          GTK_RESPONSE_REJECT,
+                                         "Dodaj słofo",
+                                         GTK_RESPONSE_APPLY,
                                          NULL);
     // W treści dialogu dwa elementy
     vbox = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
@@ -134,7 +112,7 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
     gtk_widget_show(label);
     gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 1);
 
-    // Spuszczane menu
+    // Spłukiwane menu
     combo = gtk_combo_box_text_new();
     for (i = 0; i < word_list_size(&hints); i++) {
       // Combo box lubi mieć Gtk
@@ -148,7 +126,8 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
     gtk_box_pack_start(GTK_BOX(vbox), combo, FALSE, FALSE, 1);
     gtk_widget_show(combo);
 
-    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+    int ret = gtk_dialog_run(GTK_DIALOG(dialog));
+    if (ret == GTK_RESPONSE_ACCEPT) {
       char *korekta =
         gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo));
 
@@ -158,16 +137,53 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
       gtk_text_buffer_insert(editor_buf, &start, korekta, -1);
       g_free(korekta);
     }
+    else if (ret == GTK_RESPONSE_APPLY) {        
+        GtkWidget *dialog_add;
+        GtkWidget *search_entry;
+        GtkWidget *vbox;
+
+
+        dialog_add = gtk_dialog_new_with_buttons("Fprowadzańe wyrazu", NULL, 0,
+                                                 GTK_STOCK_OK,
+                                                 GTK_RESPONSE_ACCEPT,
+                                                 GTK_STOCK_CANCEL,
+                                                 GTK_RESPONSE_REJECT,
+                                                 NULL);
+        
+        // W treści dialogu dwa elementy
+        vbox = gtk_dialog_get_content_area(GTK_DIALOG(dialog_add));
+        // Tekst
+        label = gtk_label_new("Fpisz prosze wyras ktury, hćał byś dodać do słofńika.");
+        gtk_widget_show(label);
+        gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 1);
+
+        search_entry = gtk_entry_new();
+
+        gtk_box_pack_start(GTK_BOX(vbox), search_entry, TRUE, TRUE, 1);
+        gtk_widget_show(search_entry);
+        int ret2 = gtk_dialog_run(GTK_DIALOG(dialog_add));
+        //
+        gtk_widget_destroy(dialog_add);
+    }
     gtk_widget_destroy(dialog);
   }
   g_free(word);
   g_free(wword);
 }
 
+
+static void SelLang (GtkMenuItem *item, gpointer data) {
+}
+
 // Tutaj dodacie nowe pozycje menu
 
 void extend_menu (GtkWidget *menubar) {
-  GtkWidget *spell_menu_item, *spell_menu, *check_item;
+  GtkWidget *spell_menu_item, *spell_menu, *check_item, *choose_lang;
+  
+  dict = dictionary_new();
+  dictionary_hints_max_cost(dict, 20);
+  dictionary_insert(dict, L"tekst");
+  dictionary_rule_add(dict, L"", L"0", true, 1, RULE_NORMAL);
 
   spell_menu_item = gtk_menu_item_new_with_label("Spell");
   spell_menu = gtk_menu_new();
@@ -178,8 +194,14 @@ void extend_menu (GtkWidget *menubar) {
   check_item = gtk_menu_item_new_with_label("Check Word");
   g_signal_connect(G_OBJECT(check_item), "activate", 
                    G_CALLBACK(WhatCheck), NULL);
-  gtk_menu_shell_append(GTK_MENU_SHELL(spell_menu), check_item);
+  gtk_menu_shell_append(GTK_MENU_SHELL(spell_menu), check_item);  
   gtk_widget_show(check_item);
+  
+  choose_lang = gtk_menu_item_new_with_label("Czuz langłydż");
+  g_signal_connect(G_OBJECT(choose_lang), "activate",
+                   G_CALLBACK(SelLang), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(spell_menu), choose_lang);
+  gtk_widget_show(choose_lang);
 }
 
 /*EOF*/
