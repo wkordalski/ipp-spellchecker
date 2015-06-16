@@ -10,10 +10,12 @@
 
 #include "dictionary.h"
 #include "list.h"
+#include "str.h"
 #include "trie.h"
 
 #include <assert.h>
 #include <stdlib.h>
+#include <wchar.h>
 #include <wctype.h>
 
 #include "../testable.h"
@@ -68,8 +70,8 @@ static int state_sorter(const void *a, const void *b)
     struct state *B = *(struct state**)b;
     if((size_t)A->node - (size_t)B->node != 0) return (size_t)A->node - (size_t)B->node;
     if((size_t)A->prev - (size_t)B->prev != 0) return (size_t)A->prev - (size_t)B->prev;
-    if(A->rule->flag == RULE_END && B->rule->flag != RULE_END) return 1;
-    if(A->rule->flag != RULE_END && B->rule->flag == RULE_END) return -1;
+    if((A->rule != NULL && A->rule->flag == RULE_END) && (B->rule == NULL || B->rule->flag != RULE_END)) return 1;
+    if((A->rule == NULL || A->rule->flag != RULE_END) && (B->rule != NULL && B->rule->flag == RULE_END)) return -1;
     int alen = wcslen(A->suf);
     int blen = wcslen(B->suf);
     return alen - blen;
@@ -591,7 +593,7 @@ static wchar_t * get_text(struct state *s)
  * @return 0 jeśli są równe, liczbę dodatnią lub ujemną
  * jeśli odpowiednio pierwszy tekst jest większy od drugiego lub drugi od pierwszego.
  */
-static int text_sorter(void *a, void *b)
+static int text_sorter(const void *a, const void *b)
 {
     wchar_t *A = *(wchar_t**)a;
     wchar_t *B = *(wchar_t**)b;
@@ -614,6 +616,30 @@ static int text_sorter(void *a, void *b)
 
 struct hint_rule * rule_make(wchar_t *src, wchar_t *dst, int cost, enum rule_flag flag)
 {
+    if(src == NULL || dst == NULL) return NULL;
+    if(cost <= 0) return NULL;
+    // e -> e must be split rule
+    if(*src == 0 && *dst == 0 && flag != RULE_SPLIT) return NULL;
+    // Check for too much variables in dst
+    char memry[10];
+    for(int i = 0; i < 10; i++)
+        memry[i] = 0;
+    wchar_t *s = dst;
+    while(*s != 0)
+    {
+        if(*s >= L'0' && *s <= L'9') memry[*s - L'0'] = 1;
+        s++;
+    }
+    s = src;
+    while(*s != 0)
+    {
+        if(*s >= L'0' && *s <= L'9') memry[*s - L'0'] = 0;
+        s++;
+    }
+    int cnt = 0;
+    for(int i = 0; i < 10; i++) cnt += memry[i];
+    if(cnt > 1) return NULL;
+    
     struct hint_rule *rule = malloc(sizeof(struct hint_rule));
     rule->src = src;
     rule->dst = dst;
@@ -684,9 +710,9 @@ struct list * rule_generate_hints(struct hint_rule **rules, int max_cost, int ma
             const wchar_t **t = (const wchar_t**)list_get(so);
             wchar_t **r =  bsearch(&e, t, list_size(so), sizeof(const wchar_t*), text_sorter);
             if(r == NULL)
-                list_add(toadd, e);
+                list_add(toadd, (void*)e);
             else
-                free(e);
+                free((void*)e);
         }
         list_add_list(output, toadd);
         list_add_list(so, toadd);
@@ -714,6 +740,36 @@ done:
     if(list_size(output) > max_hints_no)
         list_resize(output, max_hints_no, NULL);
     return output;
+}
+
+int rule_serialize(struct hint_rule *rule, FILE *file)
+{
+    struct string *src = string_make(rule->src);
+    struct string *dst = string_make(rule->dst);
+    string_serialize(src, file);
+    string_serialize(dst, file);
+    fputwc(rule->cost, file);
+    fputwc(rule->flag, file);
+}
+
+struct hint_rule *rule_deserialize(FILE *file)
+{
+    struct string *src = string_deserialize(file);
+    struct string *dst = string_deserialize(file);
+    int cost = fgetwc(file);
+    int flag = fgetwc(file);
+    if(src == NULL || dst == NULL) goto fail;
+    if(cost == -1 || flag == -1) goto fail;
+    struct hint_rule *rule = malloc(sizeof(struct hint_rule));
+    rule->src = string_undress(src);
+    rule->dst = string_undress(dst);
+    rule->cost = cost;
+    rule->flag = flag;
+    return rule;
+fail:
+    if(src != NULL) string_done(src);
+    if(dst != NULL) string_done(dst);
+    return NULL;
 }
 
 /**

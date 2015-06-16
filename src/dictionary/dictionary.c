@@ -40,6 +40,11 @@ struct dictionary
   @{
  */
 
+/**
+ * Filters only files with .dict extension.
+ * @param[in] f Filter entity.
+ * @return 1 if accept file, 0 otherwise.
+ */
 int dict_file_filter(const struct dirent *f)
 {
     if(f->d_type != DT_REG) return 0;
@@ -47,6 +52,17 @@ int dict_file_filter(const struct dirent *f)
     if(len < 5) return 0;
     if(strcmp(f->d_name + len - 5, ".dict")) return 0;
     return 1;
+}
+
+/**
+ * Simple wrapper for rule_done for list_iter.
+ * @param[in] r Rule to free.
+ * @param[in] ctx Useless context.
+ */
+void rule_done_wrapper(void *r, void *ctx)
+{
+    if(r != NULL)
+        rule_done((struct hint_rule*)r);
 }
 
 /**
@@ -61,12 +77,16 @@ struct dictionary * dictionary_new()
     struct dictionary *dict =
         (struct dictionary *) malloc(sizeof(struct dictionary));
     dict->root = trie_init();
+    dict->rules = list_init();
+    dict->max_cost = 0;
     return dict;
 }
 
 void dictionary_done(struct dictionary *dict)
 {
     trie_done(dict->root);
+    list_iter(dict->rules, NULL, rule_done_wrapper);
+    list_done(dict->rules);
     free(dict);
 }
 
@@ -87,18 +107,34 @@ bool dictionary_find(const struct dictionary *dict, const wchar_t* word)
 
 int dictionary_save(const struct dictionary *dict, FILE* stream)
 {
-    trie_serialize(dict->root, stream);
+    if(trie_serialize(dict->root, stream)<0) return -1;
+    if(list_serialize(dict->rules, stream, rule_serialize)<0) return -1;
+    if(fputwc(dict->max_cost, stream)<0) return -1;
     return 0;
 }
 
 struct dictionary * dictionary_load(FILE* stream)
 {
     struct trie_node * root = trie_deserialize(stream);
-    if(root == NULL) return NULL;
+    if(root == NULL) goto fail;
+    struct list *rules = list_deserialize(stream, rule_deserialize);
+    if(rules == NULL) goto fail;
+    int mcost = fgetwc(stream);
+    if(mcost < 0) goto fail;
     struct dictionary * dict = 
         (struct dictionary *) malloc(sizeof(struct dictionary));
     dict->root = root;
+    dict->rules = rules;
+    dict->max_cost = mcost;
     return dict;
+fail:
+    if(root != NULL) trie_done(root);
+    if(rules != NULL)
+    {
+        list_iter(rules, NULL, rule_done_wrapper);
+        list_done(rules);
+    }
+    return NULL;
 }
 
 void dictionary_hints(const struct dictionary *dict, const wchar_t* word,
@@ -179,5 +215,28 @@ int dictionary_save_lang(const struct dictionary *dict, const char *lang)
     free(fname);
     return r;
 }
+
+void dictionary_rule_clear(struct dictionary* dict)
+{
+    list_clear(dict->rules);
+}
+
+int dictionary_rule_add(struct dictionary* dict, const wchar_t* left, const wchar_t* right, bool bidirectional, int cost, enum rule_flag flag)
+{
+    struct hint_rule *r = rule_make(left, right, cost, flag);
+    int ret = 1;
+    if(r != NULL) list_add(dict->rules, r);
+    else ret = 0;
+    if(bidirectional) ret += dictionary_rule_add(dict, right, left, false, cost, flag);
+    return ret;
+}
+
+int dictionary_hints_max_cost(struct dictionary* dict, int new_cost)
+{
+    int r = dict->max_cost;
+    dict->max_cost = new_cost;
+    return r;
+}
+
 
 /**@}*/

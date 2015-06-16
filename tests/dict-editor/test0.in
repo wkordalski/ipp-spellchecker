@@ -7,3 +7,5 @@ clear
 hints b
 load dict.txt
 hints b
+insert b
+hints b

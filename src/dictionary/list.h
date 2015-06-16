@@ -12,6 +12,7 @@
 #define DICTIONARY_LIST_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 /**
   Struktura przechowująca listę.
@@ -145,5 +146,11 @@ void list_clear(struct list *l);
  */
 
 void list_iter(struct list *l, void *a, void (*f)(void *, void *));
+
+int list_serialize(struct list *l, FILE *file, int (*f)(void *, FILE *));
+
+struct list * list_deserialize(FILE *file, void * (*f)(FILE *));
+
+void list_terminate(struct list *l);
 
 #endif /* DICTIONARY_LIST_H */

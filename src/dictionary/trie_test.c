@@ -17,7 +17,6 @@
 #include <stdlib.h>
 #include <cmocka.h>
 #include "trie.h"
-#include "charmap.h"
 #include "word_list.h"
 #include "../testable.h"
 
@@ -38,14 +37,8 @@ extern struct trie_node * trie_get_child_priv(struct trie_node *node, wchar_t va
 extern struct trie_node * trie_get_child_or_add_empty(struct trie_node *node, wchar_t value);
 extern void trie_cleanup(struct trie_node *node, struct trie_node *parent);
 extern int trie_delete_helper(struct trie_node *node, struct trie_node *parent, const wchar_t *word);
-extern void trie_fill_charmap(struct trie_node *node, struct char_map *map, wchar_t **trans, char *symbol, int length, int *maxlength);
-extern void trie_serialize_formatA_ender(int res, int count, int loglen, FILE *file);
-extern int trie_serialize_formatA_helper(struct trie_node *node, struct char_map *map, int count, int loglen, FILE *file);
-extern void trie_serialize_formatA(struct trie_node *root, struct char_map *map, wchar_t *trans, int loglen, FILE *file);
 extern int trie_serialize_formatU_helper(struct trie_node *node, FILE *file);
 extern int trie_serialize_formatU(struct trie_node *node, FILE *file);
-extern int trie_deserialize_formatA_helper(struct trie_node *node, int lcount, int loglen, wchar_t * translator, FILE *file);
-extern struct trie_node * trie_deserialize_formatA(FILE *file);
 extern int trie_deserialize_formatU_helper(struct trie_node *node, FILE *file);
 extern struct trie_node * trie_deserialize_formatU(FILE *file);
 extern void fix_size(wchar_t **string, int length, int *capacity);
@@ -858,217 +851,6 @@ static void trie_delete_helper_11_leaf_A_test(void **state)
 }
 
 /**
- * Testuje wypełnianie mapy znaków znakami z drzewa na pojedynczym węźle.
- */
-static void trie_fill_charmap_root_test(void **state)
-{
-    struct trie_node *node = trie_init();
-    node->val = L'v';
-    struct char_map *map = char_map_init();
-    wchar_t trans[256];
-    wchar_t *tred = trans;
-    char sym = 3;
-    int ml = 0;
-    trie_fill_charmap(node, map, &tred, &sym, 0, &ml);
-    char os = 42;
-    assert_true(char_map_get(map, L'v', &os) == 1);
-    assert_true(os == 3);
-    assert_true(char_map_size(map) == 1);
-    assert_true(tred = trans+1);
-    assert_true(trans[0] == L'v');
-    assert_true(sym == 4);
-    assert_true(ml == 0);
-    char_map_done(map);
-    trie_done(node);
-}
-
-/**
- * Testuje wypełnianie mapy znaków znakami z drzewa
- * na węźle z pojedynczym dzieckiem.
- */
-static void trie_fill_charmap_1_test(void **state)
-{
-    struct trie_node *node = trie_init();
-    node->val = L'v';
-    trie_get_child_or_add_empty(node, L's');
-    struct char_map *map = char_map_init();
-    wchar_t trans[256];
-    wchar_t *tred = trans;
-    char sym = 3;
-    int ml = 0;
-    trie_fill_charmap(node, map, &tred, &sym, 0, &ml);
-    char os = 42;
-    assert_true(char_map_get(map, L'v', &os) == 1);
-    assert_true(os == 3);
-    assert_true(char_map_get(map, L's', &os) == 1);
-    assert_true(os == 4);
-    assert_true(char_map_size(map) == 2);
-    assert_true(tred = trans+2);
-    assert_true(trans[0] == L'v');
-    assert_true(trans[1] == L's');
-    assert_true(sym == 5);
-    assert_true(ml == 1);
-    char_map_done(map);
-    trie_done(node);
-}
-
-/**
- * Testuje wypisywanie skróconej instrukcji przejścia do praprapradziadka
- * dla formatu dictA.
- */
-static void trie_serialize_formatA_ender_1_test(void **state)
-{
-    writep = 0;
-    trie_serialize_formatA_ender(5, 42, 8, NULL);
-    assert_int_equal(buff[0], 55);
-    assert_int_equal(writep, 1);
-}
-
-/**
- * Testuje wypisywanie pełnej sekwencji instrukcji przejścia do (34-pra)dziadka
- * dla formatu dictA.
- */
-static void trie_serialize_formatA_ender_2_test(void **state)
-{
-    writep = 0;
-    trie_serialize_formatA_ender(36, 242, 8, NULL);
-    assert_int_equal(buff[0], 245);
-    assert_int_equal(buff[1], 248);
-    assert_int_equal(writep, 2);
-}
-
-/**
- * Testuje funkcję pomocniczą zapisującą drzewo (a)
- * dla formatu dictA.
- */
-static void trie_serialize_formatA_helper_root_test(void **state)
-{
-    writep = 0;
-    struct trie_node *node = trie_init();
-    node->val = L'a';
-    struct char_map *map = char_map_init();
-    char_map_put(map, L'a', 5);
-    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, NULL), 1);
-    assert_int_equal(buff[0], 5);
-    assert_int_equal(writep, 1);
-    char_map_done(map);
-    trie_done(node);
-}
-
-/**
- * Testuje funkcję pomocniczą zapisującą drzewo (k)->(n)
- * dla formatu dictA.
- */
-static void trie_serialize_formatA_helper_1_test(void **state)
-{
-    writep = 0;
-    struct trie_node *node = trie_init();
-    node->val = L'k';
-    trie_get_child_or_add_empty(node, L'n');
-    struct char_map *map = char_map_init();
-    char_map_put(map, L'k', 5);
-    char_map_put(map, L'n', 9);
-    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, NULL), 2);
-    assert_int_equal(buff[0], 5);
-    assert_int_equal(buff[1], 9);
-    assert_int_equal(writep, 2);
-    char_map_done(map);
-    trie_done(node);
-}
-
-/**
- * Testuje funkcję pomocniczą zapisującą drzewo [k]->(n), gdzie k jest liściem
- * dla formatu dictA.
- */
-static void trie_serialize_formatA_helper_1_leaf_test(void **state)
-{
-    writep = 0;
-    struct trie_node *node = trie_init();
-    node->val = L'k';
-    node->leaf = 1;
-    trie_get_child_or_add_empty(node, L'n');
-    struct char_map *map = char_map_init();
-    char_map_put(map, L'k', 5);
-    char_map_put(map, L'n', 9);
-    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, NULL), 2);
-    assert_int_equal(buff[0], 5);
-    assert_int_equal(buff[1], 12);
-    assert_int_equal(buff[2], 9);
-    assert_int_equal(writep, 3);
-    char_map_done(map);
-    trie_done(node);
-}
-
-/**
- * Testuje funkcję pomocniczą zapisującą drzewo (k)->(n),(t)
- * dla formatu dictA
- */
-static void trie_serialize_formatA_helper_2_test(void **state)
-{
-    writep = 0;
-    struct trie_node *node = trie_init();
-    node->val = L'k';
-    trie_get_child_or_add_empty(node, L'n');
-    trie_get_child_or_add_empty(node, L't');
-    struct char_map *map = char_map_init();
-    char_map_put(map, L'k', 5);
-    char_map_put(map, L'n', 9);
-    char_map_put(map, L't', 2);
-    assert_int_equal(trie_serialize_formatA_helper(node, map, 12, 8, NULL), 2);
-    assert_int_equal(buff[0], 5);
-    assert_int_equal(buff[1], 9);
-    assert_int_equal(buff[2], 21);
-    assert_int_equal(buff[3], 2);
-    assert_int_equal(writep, 4);
-    char_map_done(map);
-    trie_done(node);
-}
-
-/**
- * Testuje funkcję zapisującą drzewo (k)->(n),(t) w formacie dictA.
- */
-static void trie_serialize_formatA_test(void **state)
-{
-    writep = 0;
-    struct trie_node *node = trie_init();
-    node->val = L'k';
-    trie_get_child_or_add_empty(node, L'n');
-    trie_get_child_or_add_empty(node, L't');
-    struct char_map *map = char_map_init();
-    char_map_put(map, L'k', 5);
-    char_map_put(map, L'n', 9);
-    char_map_put(map, L't', 2);
-    char_map_put(map, L'a', 0);
-    char_map_put(map, L'b', 1);
-    char_map_put(map, L'c', 3);
-    char_map_put(map, L'd', 4);
-    char_map_put(map, L'e', 6);
-    char_map_put(map, L'f', 7);
-    char_map_put(map, L'g', 8);
-    char_map_put(map, L'h', 10);
-    char_map_put(map, L'i', 11);
-    wchar_t trans[256];
-    trans[0] = L'a';
-    trans[1] = L'b';
-    trans[2] = L't';
-    trans[3] = L'c';
-    trans[4] = L'd';
-    trans[5] = L'k';
-    trans[6] = L'e';
-    trans[7] = L'f';
-    trans[8] = L'g';
-    trans[9] = L'n';
-    trans[10] = L'h';
-    trans[11] = L'i';
-    char *output = "dictA\x0c\x08\x00\x00\x00\x0c""abtcdkefgnhi\x09\x15\x02\x15\x0d";
-    trie_serialize_formatA(node, map, trans, 8, NULL);
-    assert_memory_equal(buff, output, 28);
-    assert_int_equal(writep, 28);
-    char_map_done(map);
-    trie_done(node);
-}
-
-/**
  * Testuje funkcję pomocniczą zapisującą drzewo (a)
  * dla formatu dictU.
  */
@@ -1166,140 +948,6 @@ static void trie_serialize_formatU_test(void **state)
     trie_done(node);
 }
 
-/**
- * Testuje funkcję pomocniczą wczytującą drzewo (root)->[t] w formacie dictA.
- */
-static void trie_deserialize_formatA_helper_1_test(void **state)
-{
-    struct trie_node *node = trie_init();
-    buff[0] = 2;
-    buff[1] = 22;
-    readp = 0;
-    filelen = 2;
-    wchar_t trans[256];
-    trans[0] = L'a';
-    trans[1] = L'b';
-    trans[2] = L't';
-    trans[3] = L'c';
-    trans[4] = L'd';
-    trans[5] = L'k';
-    trans[6] = L'e';
-    trans[7] = L'f';
-    trans[8] = L'g';
-    trans[9] = L'n';
-    trans[10] = L'h';
-    trans[11] = L'i';
-    assert_int_equal(trie_deserialize_formatA_helper(node, 12, 8, trans, NULL), 0);
-    assert_int_equal(node->cnt, 1);
-    assert_int_equal(node->leaf, 0);
-    assert_true(node->chd[0]->val == L't');
-    assert_true(node->chd[0]->leaf != 0);
-    assert_true(node->chd[0]->cnt == 0);
-    trie_done(node);
-}
-
-/**
- * Testuje funkcję pomocniczą wczytującą drzewo (root)->[t]->[k] w formacie dictA.
- */
-static void trie_deserialize_formatA_helper_2_test(void **state)
-{
-    struct trie_node *node = trie_init();
-    buff[0] = 2;
-    buff[1] = 12;
-    buff[2] = 5;
-    buff[3] = 25;
-    readp = 0;
-    filelen = 4;
-    wchar_t trans[256];
-    trans[0] = L'a';
-    trans[1] = L'b';
-    trans[2] = L't';
-    trans[3] = L'c';
-    trans[4] = L'd';
-    trans[5] = L'k';
-    trans[6] = L'e';
-    trans[7] = L'f';
-    trans[8] = L'g';
-    trans[9] = L'n';
-    trans[10] = L'h';
-    trans[11] = L'i';
-    assert_int_equal(trie_deserialize_formatA_helper(node, 12, 8, trans, NULL), 2);
-    assert_int_equal(node->cnt, 1);
-    assert_int_equal(node->leaf, 0);
-    assert_true(node->chd[0]->val == L't');
-    assert_true(node->chd[0]->leaf != 0);
-    assert_true(node->chd[0]->cnt == 1);
-    assert_true(node->chd[0]->chd[0]->val == L'k');
-    assert_true(node->chd[0]->chd[0]->leaf != 0);
-    assert_true(node->chd[0]->chd[0]->cnt == 0);
-    trie_done(node);
-}
-
-/**
- * Testuje funkcję pomocniczą wczytującą drzewo (root)->(t)->(k)->(n)->[k] w formacie dictA.
- */
-static void trie_deserialize_formatA_helper_3_test(void **state)
-{
-    struct trie_node *node = trie_init();
-    buff[0] = 2;
-    buff[1] = 5;
-    buff[2] = 9;
-    buff[3] = 5;
-    buff[4] = 13;
-    buff[5] = 15;
-    readp = 0;
-    filelen = 6;
-    wchar_t trans[256];
-    trans[0] = L'a';
-    trans[1] = L'b';
-    trans[2] = L't';
-    trans[3] = L'c';
-    trans[4] = L'd';
-    trans[5] = L'k';
-    trans[6] = L'e';
-    trans[7] = L'f';
-    trans[8] = L'g';
-    trans[9] = L'n';
-    trans[10] = L'h';
-    trans[11] = L'i';
-    assert_int_equal(trie_deserialize_formatA_helper(node, 12, 8, trans, NULL), 0);
-    assert_int_equal(node->cnt, 1);
-    assert_int_equal(node->leaf, 0);
-    assert_true(node->chd[0]->val == L't');
-    assert_true(node->chd[0]->leaf == 0);
-    assert_true(node->chd[0]->cnt == 1);
-    assert_true(node->chd[0]->chd[0]->val == L'k');
-    assert_true(node->chd[0]->chd[0]->leaf == 0);
-    assert_true(node->chd[0]->chd[0]->cnt == 1);
-    assert_true(node->chd[0]->chd[0]->chd[0]->val == L'n');
-    assert_true(node->chd[0]->chd[0]->chd[0]->leaf == 0);
-    assert_true(node->chd[0]->chd[0]->chd[0]->cnt == 1);
-    assert_true(node->chd[0]->chd[0]->chd[0]->chd[0]->val == L'k');
-    assert_true(node->chd[0]->chd[0]->chd[0]->chd[0]->leaf != 0);
-    assert_true(node->chd[0]->chd[0]->chd[0]->chd[0]->cnt == 0);
-    trie_done(node);
-}
-
-/**
- * Testuje funkcję wczytującą drzewo (root)->[n],[t] w formacie dictA.
- */
-static void trie_deserialize_fromatA_test(void **state)
-{
-    char *output = "\x0c\x08\x00\x00\x00\x0c""abtcdkefgnhi\x09\x15\x02\x15\x0d";
-    memcpy(buff, output, 29);
-    readp = 0;
-    filelen = 29;
-    struct trie_node *node = trie_deserialize_formatA(NULL);
-    assert_int_equal(node->cnt, 2);
-    assert_int_equal(node->leaf, 0);
-    assert_int_equal(node->chd[0]->cnt, 0);
-    assert_int_equal(node->chd[0]->leaf, 1);
-    assert_int_equal(node->chd[0]->val, L'n');
-    assert_int_equal(node->chd[1]->cnt, 0);
-    assert_int_equal(node->chd[1]->leaf, 1);
-    assert_int_equal(node->chd[1]->val, L't');
-    trie_done(node);
-}
 
 /**
  * Testuje funkcję pomocniczą wczytującą drzewo (root)->[t] w formacie dictU.
@@ -1633,10 +1281,10 @@ static void trie_serialize_test(void **state)
     trie_insert(node, L"p");
     trie_insert(node, L"gl");
     trie_insert(node, L"gr");
-    char *output = "dictA\x04\x01\x00\x00\x00\x04""glrp\x00\x01\x06\x02\x07\x03\x06\x05";
-    writep = 0;
+    wchar_t *output = L"gl\x01\x02r\x01\x02\x02p\x01\x02\x02";
+    wwritep = 0;
     trie_serialize(node, NULL);
-    assert_memory_equal(buff, output, 23);
+    assert_memory_equal(wbuff, output, 12*sizeof(wchar_t));
     trie_done(node);
 }
 
@@ -1681,11 +1329,10 @@ static void trie_get_child_2_test(void **state)
  */
 static void trie_deserialize_test(void **state)
 {
-    char *output = "dictA\x04\x01\x00\x00\x00\x04""glrp\x00\x01\x06\x02\x07\x03\x06\x05";
-    unsigned char buff[64];
-    memcpy(buff, output, 23);
-    readp = 0;
-    filelen = 23;
+    wchar_t *output = L"gl\x01\x02r\x01\x02\x02p\x01\x02\x02";
+    memcpy(wbuff, output, 12*sizeof(wchar_t));
+    wreadp = 0;
+    wfilelen = 12;
     struct trie_node * node = trie_deserialize(NULL);
     assert_int_equal(node->cnt, 2);
     assert_int_equal(node->chd[0]->val, L'g');
@@ -1704,8 +1351,6 @@ static void trie_deserialize_test(void **state)
     
     trie_done(node);
 }
-
-///@todo Testy do trie_hints
 
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -1738,24 +1383,11 @@ int main(void) {
         cmocka_unit_test(trie_delete_helper_11_leaf_test),
         cmocka_unit_test(trie_delete_helper_1_nochild_test),
         cmocka_unit_test(trie_delete_helper_11_leaf_A_test),
-        cmocka_unit_test(trie_fill_charmap_root_test),
-        cmocka_unit_test(trie_fill_charmap_1_test),
-        cmocka_unit_test(trie_serialize_formatA_ender_1_test),
-        cmocka_unit_test(trie_serialize_formatA_ender_2_test),
-        cmocka_unit_test(trie_serialize_formatA_helper_root_test),
-        cmocka_unit_test(trie_serialize_formatA_helper_1_test),
-        cmocka_unit_test(trie_serialize_formatA_helper_1_leaf_test),
-        cmocka_unit_test(trie_serialize_formatA_helper_2_test),
-        cmocka_unit_test(trie_serialize_formatA_test),
         cmocka_unit_test(trie_serialize_formatU_helper_root_test),
         cmocka_unit_test(trie_serialize_formatU_helper_1_test),
         cmocka_unit_test(trie_serialize_formatU_helper_1_leaf_test),
         cmocka_unit_test(trie_serialize_formatU_helper_2_test),
         cmocka_unit_test(trie_serialize_formatU_test),
-        cmocka_unit_test(trie_deserialize_formatA_helper_1_test),
-        cmocka_unit_test(trie_deserialize_formatA_helper_2_test),
-        cmocka_unit_test(trie_deserialize_formatA_helper_3_test),
-        cmocka_unit_test(trie_deserialize_fromatA_test),
         cmocka_unit_test(trie_deserialize_formatU_helper_1_test),
         cmocka_unit_test(trie_deserialize_formatU_helper_2_test),
         cmocka_unit_test(trie_deserialize_formatU_helper_3_test),

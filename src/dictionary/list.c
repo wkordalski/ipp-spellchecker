@@ -10,8 +10,10 @@
 
 #include "list.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
 /**
  * Struktura przechowująca listę słów.
@@ -181,6 +183,33 @@ void list_iter(struct list *l, void *a, void (*f)(void *, void*))
     {
         f(l->array[i], a);
     }
+}
+
+int list_serialize(struct list *l, FILE *file, int (*f)(void *, FILE *))
+{
+    if(fputwc(l->size, file)<0) return -1;
+    for(int i = 0; i < l->size; i++)
+    {
+        if(f(l->array[i], file)<0) return -1;
+    }
+    return 0;
+}
+
+struct list * list_deserialize(FILE *file, void * (*f)(FILE *))
+{
+    int size = fgetwc(file);
+    if(size < 0) return NULL;
+    struct list *l = list_init();
+    list_reserve(l, size);
+    for(int i = 0; i < size; i++)
+        list_add(l, f(file));
+    return l;
+}
+
+void list_terminate(struct list *l)
+{
+    list_add(l, NULL);
+    list_pop(l);
 }
 
 /**

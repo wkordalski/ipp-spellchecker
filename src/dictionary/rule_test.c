@@ -157,9 +157,9 @@ static void translate_letter_unset_test(void **state)
 static void rule_make_done_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
-    struct hint_rule *r = rule_make(L"pa773rn", L"d3571na710n", 7, RULE_SPLIT);
+    struct hint_rule *r = rule_make(L"pa773rn", L"d357ina7ion", 7, RULE_SPLIT);
     assert_string_equal(r->src, L"pa773rn");
-    assert_string_equal(r->dst, L"d3571na710n");
+    assert_string_equal(r->dst, L"d357ina7ion");
     assert_int_equal(r->cost, 7);
     assert_int_equal(r->flag, RULE_SPLIT);
     rule_done(r);
@@ -954,7 +954,7 @@ static void unify_states_test(void **rubbish)
     r[3] = rule_make(L"", L"d", 1, RULE_NORMAL);
     r[4] = rule_make(L"", L"", 1, RULE_SPLIT);
     
-    struct list **l[5];
+    struct list *l[5];
     l[0] = list_init();
     l[1] = list_init();
     l[2] = list_init();

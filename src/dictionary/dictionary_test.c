@@ -28,7 +28,10 @@
 struct dictionary
 {
     struct trie_node *root;      ///< Korzeń drzewa TRIE
+    int max_cost;                ///< Maksymalny koszt podpowiedzi.
+    struct list *rules;          ///< Lista reguł podpowiedzi.
 };
+
 
 /**
  * Testuje tworzenie i usuwanie słownika.
@@ -86,12 +89,16 @@ static void dictionary_hints_test(void **state)
     dictionary_insert(dict, L"ąla");
     dictionary_insert(dict, L"bla");
     dictionary_insert(dict, L"ble");
+    dictionary_rule_add(dict, L"0", L"", false, 1, RULE_NORMAL);
+    dictionary_rule_add(dict, L"", L"0", false, 1, RULE_NORMAL);
+    dictionary_rule_add(dict, L"0", L"1", false, 1, RULE_NORMAL);
+    dictionary_hints_max_cost(dict, 8);
     struct word_list list;
     dictionary_hints(dict, L"bla", &list);
     assert_int_equal(word_list_size(&list), 4);
-    assert_true(wcscmp(word_list_get(&list)[0], L"ala")==0);
-    assert_true(wcscmp(word_list_get(&list)[1], L"ąla")==0);
-    assert_true(wcscmp(word_list_get(&list)[2], L"bla")==0);
+    assert_true(wcscmp(word_list_get(&list)[0], L"bla")==0);
+    assert_true(wcscmp(word_list_get(&list)[1], L"ala")==0);
+    assert_true(wcscmp(word_list_get(&list)[2], L"ąla")==0);
     assert_true(wcscmp(word_list_get(&list)[3], L"ble")==0);
     word_list_done(&list);
     dictionary_done(dict);
