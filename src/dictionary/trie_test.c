@@ -41,7 +41,6 @@ extern int trie_serialize_formatU_helper(struct trie_node *node, FILE *file);
 extern int trie_serialize_formatU(struct trie_node *node, FILE *file);
 extern int trie_deserialize_formatU_helper(struct trie_node *node, FILE *file);
 extern struct trie_node * trie_deserialize_formatU(FILE *file);
-extern void fix_size(wchar_t **string, int length, int *capacity);
 extern void trie_hints_helper(struct trie_node *node, const wchar_t *word,
                        wchar_t **created, int length, int *capacity,
                        int points, struct word_list *list);
@@ -1060,40 +1059,6 @@ static void trie_deserialize_fromatU_test(void **state)
 }
 
 /**
- * Testuje funkcję dbającą o długość stringu do którego piszemy.
- * Nic nie powinno się stać.
- */
-static void fix_size_1_test(void **state)
-{
-    wchar_t *str = malloc(4*sizeof(wchar_t));
-    str[0] = L'a';
-    str[1] = L'b';
-    int cap = 4;
-    fix_size(&str, 2, &cap);
-    assert_int_equal(cap, 4);
-    assert_memory_equal(str, L"ab", 2);
-    free(str);
-}
-
-/**
- * Testuje funkcję dbającą o długość stringu do którego piszemy.
- * Bufor powinien zostać zrealokowany, a jego rozmiar podwojony.
- */
-static void fix_size_2_test(void **state)
-{
-    wchar_t *str = malloc(4*sizeof(wchar_t));
-    str[0] = L'a';
-    str[1] = L'b';
-    str[2] = L'c';
-    str[3] = L'd';
-    int cap = 4;
-    fix_size(&str, 5, &cap);
-    assert_int_equal(cap, 8);
-    assert_memory_equal(str, L"abcd", 4);
-    free(str);
-}
-
-/**
  * Testuje funkcję usuwającą zawartość drzewa na pojedynczym węźle.
  */
 static void trie_clear_1_test(void **state)
@@ -1392,8 +1357,6 @@ int main(void) {
         cmocka_unit_test(trie_deserialize_formatU_helper_2_test),
         cmocka_unit_test(trie_deserialize_formatU_helper_3_test),
         cmocka_unit_test(trie_deserialize_fromatU_test),
-        cmocka_unit_test(fix_size_1_test),
-        cmocka_unit_test(fix_size_2_test),
         cmocka_unit_test(trie_clear_1_test),
         cmocka_unit_test(trie_clear_2_test),
         cmocka_unit_test(trie_insert_1_test),

@@ -368,25 +368,6 @@ static struct trie_node * trie_deserialize_formatU(FILE *file)
 }
 
 /**
- * Wydłuża string-a jeśli trzeba, aby móc dodać do niego kolejną literę.
- * 
- * @param[in,out] string Wskaźnik na stringa, którego ew. wydłużyć.
- * @param[in] length Aktualna długość stringa.
- * @param[in,out] capacity Aktualna pojemność stringa.
- */
-static void fix_size(wchar_t **string, int length, int *capacity)
-{
-    if(length >= *capacity)
-    {
-        (*capacity) *= 2;
-        wchar_t * newstr = malloc(sizeof(wchar_t)*(*capacity));
-        memcpy(newstr, *string, (*capacity)/2);
-        free(*string);
-        *string = newstr;
-    }
-}
-
-/**
  * @}
  */
 
@@ -533,6 +514,7 @@ void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *l
         word_list_add(list, list_get(output)[i]);
         free(list_get(output)[i]);
     }
+    list_done(output);
 }
 
 

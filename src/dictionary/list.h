@@ -48,6 +48,14 @@ size_t list_add(struct list *l, void *e);
 size_t list_add_list(struct list *l, struct list *m);
 
 /**
+ * Dodaje listę elementów na koniec listy i usuwa dodaną listę.
+ * @param[in,out] l Lista, do której dodać.
+ * @param[in] m Lista elementów do dadania.
+ * @return Nowy rozmiar listy jeśli się udało, 0 w p.p.
+ */
+size_t list_add_list_and_free(struct list *l, struct list *m);
+
+/**
   Dodaje element na koniec listy.
   @param[in,out] l Lista.
   @param[in] e Element.

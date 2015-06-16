@@ -383,7 +383,7 @@ static void explore_trie(const struct trie_node *n,
             s->prev = s->node;
             s->node = root;
         }
-        list_add_list(l, extend_state(s));
+        list_add_list_and_free(l, extend_state(s));
         return;
     }
     wchar_t addtn = translate_letter(*dst, memory);
@@ -442,12 +442,20 @@ static struct list * apply_rules_to_states(struct list *s, int c, const struct t
     {
         struct list *std = list_init();
         struct state *ss = sts[i];
-        if(ss->rule != NULL && ss->rule->flag == RULE_END) continue;
+        if(ss->rule != NULL && ss->rule->flag == RULE_END)
+        {
+            list_done(std);
+            continue;
+        }
         struct hint_rule ***rg = pp[wcslen(ss->suf)];
         bool hasc = true;
         for(int i = 0; i < c; i++)
         {
-            if(rg[i] == NULL) hasc = false;
+            if(rg[i] == NULL) 
+            {
+                hasc = false;
+                break;
+            }
         }
         if(hasc)
         {
@@ -463,8 +471,7 @@ static struct list * apply_rules_to_states(struct list *s, int c, const struct t
                 }
             }
         }
-        list_add_list(ret, std);
-        list_done(std);
+        list_add_list_and_free(ret, std);
     }
     return ret;
 }
@@ -689,7 +696,7 @@ struct list * rule_generate_hints(struct hint_rule **rules, int max_cost, int ma
         for(int j = 1; j <= i; j++)
         {
             int lno = i - j;
-            list_add_list(layers[i], apply_rules_to_states(layers[lno], j, root, pp));
+            list_add_list_and_free(layers[i], apply_rules_to_states(layers[lno], j, root, pp));
         }
         unify_states(layers, i);
         struct state **li = (struct state **)list_get(layers[i]);
@@ -723,7 +730,7 @@ struct list * rule_generate_hints(struct hint_rule **rules, int max_cost, int ma
     }
 done:
     // Clean-up!
-    for(int i = 0; i < max_cost; i++)
+    for(int i = 0; i <= max_cost; i++)
     {
         struct list *ll = layers[i];
         struct state **ss = (struct state**)list_get(ll);
@@ -746,10 +753,11 @@ int rule_serialize(struct hint_rule *rule, FILE *file)
 {
     struct string *src = string_make(rule->src);
     struct string *dst = string_make(rule->dst);
-    string_serialize(src, file);
-    string_serialize(dst, file);
-    fputwc(rule->cost, file);
-    fputwc(rule->flag, file);
+    if(string_serialize(src, file)<0) return -1;
+    if(string_serialize(dst, file)<0) return -1;
+    if(fputwc(rule->cost, file)<0) return -1;
+    if(fputwc(rule->flag, file)<0) return -1;
+    return 0;
 }
 
 struct hint_rule *rule_deserialize(FILE *file)

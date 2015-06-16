@@ -80,6 +80,13 @@ size_t list_add_list(struct list *l, struct list *m)
     return l->size;
 }
 
+size_t list_add_list_and_free(struct list *l, struct list *m)
+{
+    size_t r = list_add_list(l, m);
+    list_done(m);
+    return r;
+}
+
 size_t list_pop(struct list* l)
 {
     if(l->size == 0) return 0;

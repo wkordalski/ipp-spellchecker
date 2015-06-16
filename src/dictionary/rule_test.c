@@ -348,7 +348,6 @@ static void extend_state_test(void **rubbish)
     const struct trie_node *d2 = trie_get_child(d1, L'b');
     const struct trie_node *d3 = trie_get_child(d2, L'c');
     const struct trie_node *d4 = trie_get_child(d3, L'd');
-    const struct trie_node *d5 = trie_get_child(d4, L'e');
     
     struct state *s = malloc(sizeof(struct state));
     const wchar_t *suf = L"abcd";
@@ -358,7 +357,7 @@ static void extend_state_test(void **rubbish)
     s->rule = NULL;
     s->suf = suf;
     struct list *l = extend_state(s);
-    struct state **ss = list_get(l);
+    struct state **ss = (struct state **)list_get(l);
     assert_int_equal(list_size(l), 5);
     assert_true(ss[0] == s);
     assert_true(ss[1]->suf == suf+1);
@@ -441,7 +440,7 @@ static void explore_trie_letter_test(void **rubbish)
     explore_trie(d, r->dst, memory, l, s, r, suf, d, 0);
     
     assert_int_equal(list_size(l), 1);
-    struct state **ss = list_get(l);
+    struct state **ss = (struct state **)list_get(l);
     assert_true(ss[0]->node == d1);
     assert_true(ss[0]->prev == NULL);
     assert_true(ss[0]->prnt == s);
@@ -479,7 +478,7 @@ static void explore_trie_constrained_jocker_test(void **rubbish)
     explore_trie(d, r->dst, memory, l, s, r, suf, d, 0);
     
     assert_int_equal(list_size(l), 1);
-    struct state **ss = list_get(l);
+    struct state **ss = (struct state **)list_get(l);
     assert_true(ss[0]->node == d1);
     assert_true(ss[0]->prev == NULL);
     assert_true(ss[0]->prnt == s);
@@ -517,7 +516,7 @@ static void explore_trie_oneway_jocker_test(void **rubbish)
     explore_trie(d, r->dst, memory, l, s, r, suf, d, 0);
     
     assert_int_equal(list_size(l), 1);
-    struct state **ss = list_get(l);
+    struct state **ss = (struct state **)list_get(l);
     assert_true(ss[0]->node == d1);
     assert_true(ss[0]->prev == NULL);
     assert_true(ss[0]->prnt == s);
@@ -557,7 +556,7 @@ static void explore_trie_multiway_jocker_test(void **rubbish)
     explore_trie(d, r->dst, memory, l, s, r, suf, d, 0);
     
     assert_int_equal(list_size(l), 2);
-    struct state **ss = list_get(l);
+    struct state **ss = (struct state **)list_get(l);
     assert_true(ss[0]->node == d1);
     assert_true(ss[0]->prev == NULL);
     assert_true(ss[0]->prnt == s);
@@ -606,7 +605,7 @@ static void explore_trie_self_constraint_jocker_test(void **rubbish)
     explore_trie(d, r->dst, memory, l, s, r, suf, d, 0);
     
     assert_int_equal(list_size(l), 1);
-    struct state **ss = list_get(l);
+    struct state **ss = (struct state **)list_get(l);
     assert_true(ss[0]->node == d2);
     assert_true(ss[0]->prev == NULL);
     assert_true(ss[0]->prnt == s);
@@ -625,7 +624,6 @@ static void explore_trie_end_rule_1_test(void **rubbish)
     setlocale(LC_ALL, "pl_PL.UTF8");
     struct trie_node *d = trie_init();
     trie_insert(d, L"ac");
-    const struct trie_node *d1 = trie_get_child(d, L'a');
     
     struct state *s = malloc(sizeof(struct state));
     const wchar_t *suf = L"b";
@@ -674,7 +672,7 @@ static void explore_trie_end_rule_2_test(void **rubbish)
     explore_trie(d, r->dst, memory, l, s, r, suf, d, 0);
     
     assert_int_equal(list_size(l), 1);
-    struct state **ss = list_get(l);
+    struct state **ss = (struct state **)list_get(l);
     assert_true(ss[0]->node == d1);
     assert_true(ss[0]->prev == NULL);
     assert_true(ss[0]->prnt == s);
@@ -693,7 +691,6 @@ static void explore_trie_split_rule_1_test(void **rubbish)
     setlocale(LC_ALL, "pl_PL.UTF8");
     struct trie_node *d = trie_init();
     trie_insert(d, L"ac");
-    const struct trie_node *d1 = trie_get_child(d, L'a');
     
     struct state *s = malloc(sizeof(struct state));
     const wchar_t *suf = L"b";
@@ -742,7 +739,7 @@ static void explore_trie_split_rule_2_test(void **rubbish)
     explore_trie(d, r->dst, memory, l, s, r, suf, d, 0);
     
     assert_int_equal(list_size(l), 1);
-    struct state **ss = list_get(l);
+    struct state **ss = (struct state **)list_get(l);
     assert_true(ss[0]->node == d);
     assert_true(ss[0]->prev == d1);
     assert_true(ss[0]->prnt == s);
@@ -774,12 +771,11 @@ static void apply_rule_test(void **rubbish)
     s->suf = suf;
     
     struct hint_rule *r = rule_make(L"01", L"10", 1, RULE_NORMAL);
-    wchar_t memory[10] = {0,0,0,0,0,0,0,0,0,0};
     
     struct list *l = apply_rule(s, r, d);
     
     assert_int_equal(list_size(l), 1);
-    struct state **ss = list_get(l);
+    struct state **ss = (struct state **)list_get(l);
     assert_true(ss[0]->node == d2);
     assert_true(ss[0]->prev == NULL);
     assert_true(ss[0]->prnt == s);
@@ -821,7 +817,7 @@ static void apply_rules_to_states_test(void **rubbish)
     struct list * l = apply_rules_to_states(states, 1, d, pp);
     
     assert_int_equal(list_size(l), 3);
-    struct state **ss = list_get(l);
+    struct state **ss = (struct state **)list_get(l);
     struct state *sa = NULL;
     struct state *sb = NULL;
     struct state *sc = NULL;
@@ -879,8 +875,6 @@ static void apply_rules_to_states_closed_state_test(void **rubbish)
     trie_insert(d, L"aa");
     trie_insert(d, L"az");
     trie_insert(d, L"azy");
-    const struct trie_node *d1 = trie_get_child(d, L'a');
-    const struct trie_node *d2 = trie_get_child(d1, L'z');
  
     struct hint_rule *cr = rule_make(L"za", L"az", 1, RULE_END);
     
@@ -943,9 +937,9 @@ static void unify_states_test(void **rubbish)
     trie_insert(d, L"c");
     trie_insert(d, L"cd");
     trie_insert(d, L"d");
-    struct trie_node *d1 = trie_get_child(d, L'c');
-    struct trie_node *d2 = trie_get_child(d1, L'd');
-    struct trie_node *d3 = trie_get_child(d, L'd');
+    const struct trie_node *d1 = trie_get_child(d, L'c');
+    const struct trie_node *d2 = trie_get_child(d1, L'd');
+    const struct trie_node *d3 = trie_get_child(d, L'd');
     
     struct hint_rule *r[5];
     r[0] = rule_make(L"ab", L"c", 1, RULE_END);
@@ -1026,9 +1020,9 @@ static void get_text_test(void **rubbish)
     trie_insert(d, L"c");
     trie_insert(d, L"cd");
     trie_insert(d, L"d");
-    struct trie_node *d1 = trie_get_child(d, L'c');
-    struct trie_node *d2 = trie_get_child(d1, L'd');
-    struct trie_node *d3 = trie_get_child(d, L'd');
+    const struct trie_node *d1 = trie_get_child(d, L'c');
+    const struct trie_node *d2 = trie_get_child(d1, L'd');
+    const struct trie_node *d3 = trie_get_child(d, L'd');
     
     struct hint_rule *r[5];
     r[0] = rule_make(L"ab", L"c", 1, RULE_END);
@@ -1037,7 +1031,7 @@ static void get_text_test(void **rubbish)
     r[3] = rule_make(L"", L"d", 1, RULE_NORMAL);
     r[4] = rule_make(L"", L"", 1, RULE_SPLIT);
     
-    struct list **l[5];
+    struct list *l[5];
     l[0] = list_init();
     l[1] = list_init();
     l[2] = list_init();
@@ -1136,9 +1130,6 @@ static void rule_generate_hints_test(void **state)
     trie_insert(d, L"cd");
     trie_insert(d, L"cdd");
     trie_insert(d, L"dd");
-    struct trie_node *d1 = trie_get_child(d, L'c');
-    struct trie_node *d2 = trie_get_child(d1, L'd');
-    struct trie_node *d3 = trie_get_child(d, L'd');
     
     struct hint_rule *r[6];
     r[0] = rule_make(L"ab", L"c", 1, RULE_END);
