@@ -49,6 +49,7 @@ void show_help (void) {
 #include "dictionary.h"
 
 struct dictionary *dict = NULL;
+char *lang = NULL;
 
 // Procedurka obsługi
 
@@ -57,6 +58,16 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
   GtkTextIter start, end;
   char *word;
   gunichar *wword;
+  
+  if(dict == NULL)
+  {
+      dialog = gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_ERROR,
+                                      GTK_BUTTONS_OK,
+                                      "Najpierf wybież jenzyk aby zprafdzić poprafność tekstó.");
+      gtk_dialog_run(GTK_DIALOG(dialog));
+      gtk_widget_destroy(dialog);
+      return;
+  }
   
   // Znajdujemy pozycję kursora
   gtk_text_buffer_get_iter_at_mark(editor_buf, &start,
@@ -93,7 +104,7 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
     GtkWidget *vbox, *label, *combo;
     struct word_list hints;
     int i;
-    wchar_t **words;
+    const wchar_t * const *words;
 
     dictionary_hints(dict, (wchar_t *)wword, &hints);
     words = word_list_get(&hints);
@@ -139,7 +150,7 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
     }
     else if (ret == GTK_RESPONSE_APPLY) {        
         GtkWidget *dialog_add;
-        GtkWidget *search_entry;
+        GtkWidget *entry;
         GtkWidget *vbox;
 
 
@@ -157,12 +168,25 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
         gtk_widget_show(label);
         gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 1);
 
-        search_entry = gtk_entry_new();
+        entry = gtk_entry_new();
 
-        gtk_box_pack_start(GTK_BOX(vbox), search_entry, TRUE, TRUE, 1);
-        gtk_widget_show(search_entry);
+        gtk_box_pack_start(GTK_BOX(vbox), entry, TRUE, TRUE, 1);
+        gtk_widget_show(entry);
         int ret2 = gtk_dialog_run(GTK_DIALOG(dialog_add));
         //
+        if(ret2 == GTK_RESPONSE_ACCEPT)
+        {
+            const char *slowo = gtk_entry_get_text(GTK_ENTRY(entry));
+            wchar_t *wslowo = (wchar_t*)g_utf8_to_ucs4_fast(slowo, -1, NULL);
+            // Wstaw do słownika
+            dictionary_insert(dict, wslowo);
+            // Usuwamy stare
+            gtk_text_buffer_delete(editor_buf, &start, &end);
+            // Wstawiamy nowe
+            gtk_text_buffer_insert(editor_buf, &start, slowo, -1);
+            
+            free(wslowo);
+        }
         gtk_widget_destroy(dialog_add);
     }
     gtk_widget_destroy(dialog);
@@ -173,17 +197,78 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
 
 
 static void SelLang (GtkMenuItem *item, gpointer data) {
+    GtkWidget *dialog;
+    GtkWidget *vbox, *label, *combo;
+    
+    char   *list;
+    size_t  llen;
+    
+    if(dictionary_lang_list(&list, &llen)<0)
+    {
+        dialog = gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+                                    "Niestety nie jestem f stanie stfierdzić\njakie słofniki zainstalofałeś.");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+    }
+    
+    dialog = gtk_dialog_new_with_buttons("Óztaf jenzyk zprafdzańa pisofńi", NULL, 0, 
+                                         GTK_STOCK_OK,
+                                         GTK_RESPONSE_ACCEPT,
+                                         GTK_STOCK_CANCEL,
+                                         GTK_RESPONSE_REJECT,
+                                         "Nofy jenzyk",
+                                         GTK_RESPONSE_APPLY,
+                                         NULL);
+    // W treści dialogu dwa elementy
+    vbox = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    // Tekst
+    label = gtk_label_new("Wybież jenzyk spońirzszei listy.");
+    gtk_widget_show(label);
+    gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 1);
+
+    combo = gtk_combo_box_text_new();
+    
+    for (int i = 0; i < llen && llen > 1;) {
+      int wlen = strlen(list+i);
+      // Combo box lubi mieć Gtk
+      char *uword = list+i;
+
+      // Dodajemy kolejny element
+      gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), uword);
+      i += wlen + 1;
+    }
+    //gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+    gtk_box_pack_start(GTK_BOX(vbox), combo, FALSE, FALSE, 1);
+    gtk_widget_show(combo);
+
+    int ret = gtk_dialog_run(GTK_DIALOG(dialog));
+    if (ret == GTK_RESPONSE_ACCEPT) {
+      char *lang_name = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo));
+      if(lang != NULL)
+      {
+          dictionary_save_lang(dict, lang);
+          dictionary_done(dict);
+          free(lang);
+      }
+      int lang_len = strlen(lang_name);
+      lang = malloc((lang_len+1)*sizeof(char));
+      memcpy(lang, lang_name, lang_len+1);
+      
+      dict = dictionary_load_lang(lang);
+          
+      g_free(lang_name);
+    }
+    else if (ret == GTK_RESPONSE_APPLY) {        
+        // ADD new language, please...
+        // and select it
+    }
+    gtk_widget_destroy(dialog);
 }
 
 // Tutaj dodacie nowe pozycje menu
 
 void extend_menu (GtkWidget *menubar) {
   GtkWidget *spell_menu_item, *spell_menu, *check_item, *choose_lang;
-  
-  dict = dictionary_new();
-  dictionary_hints_max_cost(dict, 20);
-  dictionary_insert(dict, L"tekst");
-  dictionary_rule_add(dict, L"", L"0", true, 1, RULE_NORMAL);
 
   spell_menu_item = gtk_menu_item_new_with_label("Spell");
   spell_menu = gtk_menu_new();

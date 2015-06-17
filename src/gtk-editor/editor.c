@@ -27,10 +27,17 @@ static void err_msg (const gchar *msg) {
 // When the user clicks on quit button or quits the app fire the delete event 
 // signal but first check if the file is modified or not
 
+#include "dictionary.h"
+
+extern struct dictionary *dict;
+extern char *lang;
+
 static gboolean delete_event (GtkWidget *widget, GdkEvent *event,
                               gpointer data) {
   return !save_if_modified();
 }
+
+
 
 // Main function
 
@@ -89,6 +96,13 @@ int main (int argc, char *argv[]) {
   // Start the main loop
   gtk_main();
 
+  // For security save the dictionary
+  if(lang != NULL && dict != NULL)
+  {
+      dictionary_save_lang(dict, lang);
+  }
+  else if(lang != NULL || dict != NULL) err_msg("Coś nie tak, sprawdź czy nie zalało Ci łazienki.");
+  
   return 0;  // for stupid compilers
              // which want integer being returned
              // when the function is declared
