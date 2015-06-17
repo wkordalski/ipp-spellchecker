@@ -9,6 +9,7 @@
  */
 
 #include "list.h"
+#include "serialization.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -113,6 +114,7 @@ size_t list_capacity(const struct list *l)
 
 size_t list_reserve(struct list *l, size_t s)
 {
+    if(s <= 0) s = 1;
     if(l->size > s) s = l->size;
     void **na = malloc(s * sizeof(void*));
     memcpy(na, l->array, l->size * sizeof(void*));
@@ -194,7 +196,7 @@ void list_iter(struct list *l, void *a, void (*f)(void *, void*))
 
 int list_serialize(struct list *l, FILE *file, int (*f)(void *, FILE *))
 {
-    if(fputwc(l->size, file)<0) return -1;
+    if(int32_serialize(l->size, file)<0) return -1;
     for(int i = 0; i < l->size; i++)
     {
         if(f(l->array[i], file)<0) return -1;
@@ -204,7 +206,8 @@ int list_serialize(struct list *l, FILE *file, int (*f)(void *, FILE *))
 
 struct list * list_deserialize(FILE *file, void * (*f)(FILE *))
 {
-    int size = fgetwc(file);
+    int size;
+    if(int32_deserialize(&size, file)<0) return NULL;
     if(size < 0) return NULL;
     struct list *l = list_init();
     list_reserve(l, size);

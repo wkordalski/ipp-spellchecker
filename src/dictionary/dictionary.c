@@ -14,6 +14,7 @@
 #include "dictionary.h"
 #include "list.h"
 #include "rule.h"
+#include "serialization.h"
 #include "trie.h"
 
 #include <stdio.h>
@@ -109,7 +110,7 @@ int dictionary_save(const struct dictionary *dict, FILE* stream)
 {
     if(trie_serialize(dict->root, stream)<0) return -1;
     if(list_serialize(dict->rules, stream, rule_serialize)<0) return -1;
-    if(fputwc(dict->max_cost, stream)<0) return -1;
+    if(int32_serialize(dict->max_cost, stream)<0) return -1;
     return 0;
 }
 
@@ -119,7 +120,8 @@ struct dictionary * dictionary_load(FILE* stream)
     if(root == NULL) goto fail;
     struct list *rules = list_deserialize(stream, rule_deserialize);
     if(rules == NULL) goto fail;
-    int mcost = fgetwc(stream);
+    int mcost;
+    if(int32_deserialize(&mcost, stream)<0) goto fail;
     if(mcost < 0) goto fail;
     struct dictionary * dict = 
         (struct dictionary *) malloc(sizeof(struct dictionary));
@@ -150,7 +152,7 @@ int dictionary_lang_list(char **list, size_t *list_len)
     struct dirent **output = NULL;
     int r = scandir(CONF_PATH, &output, dict_file_filter, alphasort);
     if(r < 0) return r;
-    if(output == NULL)
+    if(r == 0 || output == NULL)
     {
         *list = malloc(sizeof(char));
         (*list)[0] = 0;
@@ -158,7 +160,7 @@ int dictionary_lang_list(char **list, size_t *list_len)
         return 0;
     }
     size_t slen = 0;
-    for(int i = 0; output[i] != NULL; i++)
+    for(int i = 0; i < r; i++)
     {
         slen += strlen(output[i]->d_name) + 1-5;
     }
@@ -172,7 +174,7 @@ int dictionary_lang_list(char **list, size_t *list_len)
     *list = malloc(sizeof(char)*slen);
     memset(*list, 0, slen);
     size_t clen = 0;
-    for(int i = 0; output[i] != NULL; i++)
+    for(int i = 0; i < r; i++)
     {
         size_t len = strlen(output[i]->d_name) - 5;
         memcpy(*list + clen, output[i]->d_name, len);

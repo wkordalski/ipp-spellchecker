@@ -10,11 +10,13 @@
 
 #include "dictionary.h"
 #include "list.h"
+#include "serialization.h"
 #include "str.h"
 #include "trie.h"
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 #include <wctype.h>
 
@@ -648,8 +650,12 @@ struct hint_rule * rule_make(wchar_t *src, wchar_t *dst, int cost, enum rule_fla
     if(cnt > 1) return NULL;
     
     struct hint_rule *rule = malloc(sizeof(struct hint_rule));
-    rule->src = src;
-    rule->dst = dst;
+    int sl = wcslen(src);
+    int dl = wcslen(dst);
+    rule->src = malloc((sl+1) * sizeof(wchar_t));
+    memcpy(rule->src, src, (sl+1) * sizeof(wchar_t));
+    rule->dst = malloc((dl+1) * sizeof(wchar_t));
+    memcpy(rule->dst, dst, (dl+1) * sizeof(wchar_t));
     rule->cost = cost;
     rule->flag = flag;
     return rule;
@@ -755,8 +761,8 @@ int rule_serialize(struct hint_rule *rule, FILE *file)
     struct string *dst = string_make(rule->dst);
     if(string_serialize(src, file)<0) return -1;
     if(string_serialize(dst, file)<0) return -1;
-    if(fputwc(rule->cost, file)<0) return -1;
-    if(fputwc(rule->flag, file)<0) return -1;
+    if(int32_serialize(rule->cost, file)<0) return -1;
+    if(int32_serialize(rule->flag, file)<0) return -1;
     return 0;
 }
 
@@ -764,10 +770,11 @@ struct hint_rule *rule_deserialize(FILE *file)
 {
     struct string *src = string_deserialize(file);
     struct string *dst = string_deserialize(file);
-    int cost = fgetwc(file);
-    int flag = fgetwc(file);
+    int cost;
+    int flag;
+    if(int32_deserialize(&cost, file)<0) goto fail;
+    if(int32_deserialize(&flag, file)<0) goto fail;
     if(src == NULL || dst == NULL) goto fail;
-    if(cost == -1 || flag == -1) goto fail;
     struct hint_rule *rule = malloc(sizeof(struct hint_rule));
     rule->src = string_undress(src);
     rule->dst = string_undress(dst);
