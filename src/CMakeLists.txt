@@ -5,7 +5,7 @@
 cmake_minimum_required (VERSION 2.6)
 
 # nazwa projektu i język źródeł
-project (Spellcheck C)    
+project (Spellcheck C CXX)    
 
 enable_testing ()
 
@@ -51,6 +51,7 @@ add_subdirectory (dictionary)
 add_subdirectory (dict-editor)
 add_subdirectory (gtk-editor)
 add_subdirectory (dict-check)
+add_subdirectory (pydict)
 
 # dodajemy obsługę Doxygena: sprawdzamy, czy jest zainstalowany i jeśli tak:
 find_package (Doxygen)
