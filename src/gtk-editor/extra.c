@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include <assert.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -47,9 +48,25 @@ void show_help (void) {
 // Oczywiście do zastąpienia prawdziwymi funkcjami
 
 #include "dictionary.h"
+#include "str.h"
+#include <wctype.h>
 
 struct dictionary *dict = NULL;
 char *lang = NULL;
+
+wchar_t *better_word(wchar_t *s)
+{
+    wchar_t *ss = s;
+    struct string *st = string_make(L"");
+    while(*ss != 0)
+    {
+        if(iswalpha(*ss))
+            string_append(st, towlower(*ss));
+        else break;
+        ss++;
+    }
+    return string_undress(st);
+}
 
 // Procedurka obsługi
 
@@ -57,7 +74,8 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
   GtkWidget *dialog;
   GtkTextIter start, end;
   char *word;
-  gunichar *wword;
+  gunichar *wwword;
+  wchar_t *wword;
   
   if(dict == NULL)
   {
@@ -85,13 +103,17 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
 
   // Znajdujemy początek i koniec słowa, a potem samo słowo 
   end = start;
+  gtk_text_iter_forward_word_end(&end);
+  start = end;
   gtk_text_iter_backward_word_start(&start);
-  gtk_text_iter_forward_word_end(&end); 
+   
   word = gtk_text_iter_get_text(&start, &end);
 
   // Zamieniamy na wide char (no prawie)
-  wword = g_utf8_to_ucs4_fast(word, -1, NULL);
+  wwword = g_utf8_to_ucs4_fast(word, -1, NULL);
 
+  wword = better_word((wchar_t*)wwword);
+  
   // Sprawdzamy
   if (dictionary_find(dict, (wchar_t *)wword)) {
     dialog = gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
@@ -192,7 +214,8 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
     gtk_widget_destroy(dialog);
   }
   g_free(word);
-  g_free(wword);
+  g_free(wwword);
+  free(wword);
 }
 
 
@@ -259,16 +282,118 @@ static void SelLang (GtkMenuItem *item, gpointer data) {
       g_free(lang_name);
     }
     else if (ret == GTK_RESPONSE_APPLY) {        
-        // ADD new language, please...
-        // and select it
+        GtkWidget *dialog_add;
+        GtkWidget *entry;
+        GtkWidget *vbox;
+
+
+        dialog_add = gtk_dialog_new_with_buttons("Fprowadzańe nazfy słofnika", NULL, 0,
+                                                 GTK_STOCK_OK,
+                                                 GTK_RESPONSE_ACCEPT,
+                                                 GTK_STOCK_CANCEL,
+                                                 GTK_RESPONSE_REJECT,
+                                                 NULL);
+        
+        // W treści dialogu dwa elementy
+        vbox = gtk_dialog_get_content_area(GTK_DIALOG(dialog_add));
+        // Tekst
+        label = gtk_label_new("Fpisz nazfe jenzyka ktury, hcerz ótfożyć.");
+        gtk_widget_show(label);
+        gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 1);
+
+        entry = gtk_entry_new();
+
+        gtk_box_pack_start(GTK_BOX(vbox), entry, TRUE, TRUE, 1);
+        gtk_widget_show(entry);
+        int ret2 = gtk_dialog_run(GTK_DIALOG(dialog_add));
+        //
+        if(ret2 == GTK_RESPONSE_ACCEPT)
+        {
+            const char *lang_name = gtk_entry_get_text(GTK_ENTRY(entry));
+            if(lang != NULL)
+            {
+                dictionary_save_lang(dict, lang);
+                dictionary_done(dict);
+                free(lang);
+            }
+            int lang_len = strlen(lang_name);
+            lang = malloc((lang_len+1)*sizeof(char));
+            memcpy(lang, lang_name, lang_len+1);
+            
+            dict = dictionary_new();
+            dictionary_save_lang(dict, lang);
+            
+            g_free((char*)lang_name);
+        }
+        gtk_widget_destroy(dialog_add);
     }
     gtk_widget_destroy(dialog);
+}
+
+extern GtkTextBuffer *editor_buf;
+
+void Blooden(GtkMenuItem *item, gpointer data)
+{
+    if(dict == NULL)
+    {
+        GtkWidget *dialog;
+        dialog = gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_ERROR,
+                                        GTK_BUTTONS_OK,
+                                        "Najpierf wybież jenzyk aby zprafdzić poprafność tekstó.");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+    GtkTextIter start, end;
+    gtk_text_buffer_get_start_iter(editor_buf, &end);
+    while(1) {
+        if(gtk_text_iter_is_end(&end)) break;
+        char *word;
+        gtk_text_iter_forward_word_end(&end); 
+        start = end;
+        gtk_text_iter_backward_word_start(&start); 
+        word = gtk_text_iter_get_text(&start, &end);
+
+        // Zamieniamy na wide char (no prawie)
+        wchar_t *wwword = (wchar_t*)g_utf8_to_ucs4_fast(word, -1, NULL);
+
+        wchar_t *wword = better_word(wwword);
+        
+        // Sprawdzamy
+        if (dictionary_find(dict, (wchar_t *)wword) == false)
+        {
+            gtk_text_buffer_apply_tag_by_name(editor_buf, "blooded", &start, &end);
+        }
+        g_free(word);
+        g_free(wwword);
+        free(wword);
+    }
+}
+
+void Cleanse(GtkMenuItem *item, gpointer data)
+{
+    GtkTextIter start, end;
+    gtk_text_buffer_get_start_iter(editor_buf, &start);
+    gtk_text_buffer_get_end_iter(editor_buf, &end);
+    gtk_text_buffer_remove_all_tags(editor_buf, &start, &end);
+}
+
+static void destroy (GtkWidget *widget, gpointer data) {
+  // For security save the dictionary
+  if(lang != NULL && dict != NULL)
+  {
+      dictionary_save_lang(dict, lang);
+      dictionary_done(dict);
+      free(lang);
+  }
+  else if(lang != NULL || dict != NULL) assert(false);
+  gtk_main_quit();
 }
 
 // Tutaj dodacie nowe pozycje menu
 
 void extend_menu (GtkWidget *menubar) {
-  GtkWidget *spell_menu_item, *spell_menu, *check_item, *choose_lang;
+  GtkWidget *spell_menu_item, *spell_menu, *check_item, *choose_lang, *blooden, *cleanse;
 
   spell_menu_item = gtk_menu_item_new_with_label("Spell");
   spell_menu = gtk_menu_new();
@@ -287,6 +412,21 @@ void extend_menu (GtkWidget *menubar) {
                    G_CALLBACK(SelLang), NULL);
   gtk_menu_shell_append(GTK_MENU_SHELL(spell_menu), choose_lang);
   gtk_widget_show(choose_lang);
+  
+  blooden = gtk_menu_item_new_with_label("Pomalói błendy na krfafy kolor");
+  g_signal_connect(G_OBJECT(blooden), "activate",
+                   G_CALLBACK(Blooden), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(spell_menu), blooden);
+  gtk_widget_show(blooden);
+  
+  cleanse = gtk_menu_item_new_with_label("Zmyi farbe z tekstó");
+  g_signal_connect(G_OBJECT(cleanse), "activate",
+                   G_CALLBACK(Cleanse), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(spell_menu), cleanse);
+  gtk_widget_show(cleanse);
+  
+  g_signal_connect(editor_window, "destroy",
+                   G_CALLBACK(destroy), NULL);
 }
 
 /*EOF*/

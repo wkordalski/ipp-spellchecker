@@ -83,6 +83,9 @@ int main (int argc, char *argv[]) {
 
   // Get a buffer for the text view where everything gets stored
   editor_buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(editor_view));
+  
+  gtk_text_buffer_create_tag(editor_buf, "blooded", 
+                             "foreground", "red", NULL);
 
   gtk_widget_show_all(editor_window);
 
@@ -95,13 +98,6 @@ int main (int argc, char *argv[]) {
 
   // Start the main loop
   gtk_main();
-
-  // For security save the dictionary
-  if(lang != NULL && dict != NULL)
-  {
-      dictionary_save_lang(dict, lang);
-  }
-  else if(lang != NULL || dict != NULL) err_msg("Coś nie tak, sprawdź czy nie zalało Ci łazienki.");
   
   return 0;  // for stupid compilers
              // which want integer being returned
