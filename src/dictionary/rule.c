@@ -663,6 +663,8 @@ struct hint_rule * rule_make(const wchar_t *src, const wchar_t *dst, int cost, e
 
 void rule_done(struct hint_rule *rule)
 {
+    free(rule->src);
+    free(rule->dst);
     free(rule);
 }
 
