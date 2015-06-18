@@ -296,10 +296,10 @@ static int trie_serialize_formatU_helper(struct trie_node *node, FILE *file)
  * @param[in] root Drzewo, które mamy reprezentować.
  * @param[in] file Plik, do którego zapisać wygenerowane instrukcje.
  */
-static int trie_serialize_formatU(struct trie_node *node, FILE *file)
+static int trie_serialize_formatU(struct trie_node *root, FILE *file)
 {
-    for(int i = 0; i < node->cnt; i++)
-        if(trie_serialize_formatU_helper(node->chd[i], file)<0) return -1;
+    for(int i = 0; i < root->cnt; i++)
+        if(trie_serialize_formatU_helper(root->chd[i], file)<0) return -1;
     if(fputwc(2, file)<0) return -1;
     return 0;
 }

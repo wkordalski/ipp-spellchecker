@@ -134,7 +134,7 @@ void list_sort(struct list* l, int (*f)(const void*, const void*));
  * @param[in,out] l Lista.
  * @param[in] f Funkcja sortująca.
  * @param[in] g Funkcja wykazująca równość elementów.
- * @param[in] dups Jeśli różne od NULL, to zostaną tam wstawione duplikaty.
+ * @param[out] dups Jeśli różne od NULL, to zostaną tam wstawione duplikaty.
  */
 void list_sort_and_unify(struct list* l, int (*f)(const void*, const void*), int (*g)(const void*, const void*), struct list* dups);
 
@@ -152,13 +152,33 @@ void list_clear(struct list *l);
  * @param[in] a Kontekst.
  * @param[in] f Funkcja do wykonania.
  */
-
 void list_iter(struct list *l, void *a, void (*f)(void *, void *));
 
+/**
+ * Zapisuje listę do pliku.
+ * 
+ * @param[in] l Lista.
+ * @param[in] file Plik.
+ * @param[in] f Funkcja zapisująca element listy do pliku.
+ * @return <0 jeśli błąd, 0 w p.p.
+ */
 int list_serialize(struct list *l, FILE *file, int (*f)(void *, FILE *));
 
+/**
+ * Wczytuje listę z pliku.
+ * 
+ * @param[in] file Plik.
+ * @param[in] f Funkcja wczytująca element listy z pliku.
+ * @return Lista lub NULL jeśli błąd.
+ */
 struct list * list_deserialize(FILE *file, void * (*f)(FILE *));
 
+/**
+ * Sprawia, że za końcem listy znajduje się NULL.
+ * W ten sposób można otrzymać listę, która jest NULL-termiated.
+ * 
+ * @param[in,out] l Lista.
+ */
 void list_terminate(struct list *l);
 
 #endif /* DICTIONARY_LIST_H */

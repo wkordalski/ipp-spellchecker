@@ -29,7 +29,7 @@ struct hint_rule;
  * @param[in] flag Flagi reguły.
  * @return Wskaźnik na nową regułę.
  */
-struct hint_rule * rule_make(wchar_t *src, wchar_t *dst, int cost, enum rule_flag flag);
+struct hint_rule * rule_make(const wchar_t *src, const wchar_t *dst, int cost, enum rule_flag flag);
 
 /**
  * Usuwa regułę.
@@ -50,8 +50,21 @@ void rule_done(struct hint_rule *rule);
  */
 struct list * rule_generate_hints(struct hint_rule **rules, int max_cost, int max_hints_no, struct trie_node *root, const wchar_t *word);
 
+/**
+ * Zapisuje regułę do pliku.
+ * 
+ * @param[in] rule Reguła.
+ * @param[in] file Plik.
+ * @return <0 jeśli błąd, 0 w p.p.
+ */
 int rule_serialize(struct hint_rule *rule, FILE *file);
 
+/**
+ * Wczytuje regułę z pliku.
+ * 
+ * @param[in] file Plik.
+ * @return Reguła lub NULL jeśli błąd.
+ */
 struct hint_rule *rule_deserialize(FILE *file);
 
 #endif /* DICTIONARY_RULE_H */

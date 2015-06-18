@@ -1,3 +1,11 @@
+/** @file
+    Plik rozszerzający możliwości edytora.
+    @ingroup gtk-editor
+    @author Wojciech Kordalski <wojtek.kordalski@gmail.com>
+    @date 2015-06-18
+    @copyright Uniwersytet Warszawski
+  */
+
 #include <gtk/gtk.h>
 #include <assert.h>
 #include <stdio.h>
@@ -7,6 +15,9 @@
 #include "editor.h"
 #include "word_list.h"
 
+/**
+ * Pokazuje okienko "O programie"
+ */
 void show_about () {
   GtkWidget *dialog = gtk_about_dialog_new();
 
@@ -20,6 +31,9 @@ void show_about () {
   gtk_widget_destroy(dialog);
 }
 
+/**
+ * Pokazuje okienko "Pomoc"
+ */
 void show_help (void) {
   GtkWidget *help_window;
   GtkWidget *label;
@@ -43,17 +57,19 @@ void show_help (void) {
   gtk_widget_show_all(help_window);
 }
 
-// Zaślepeczki słownika (wchar_t i gunichar to prawie to samo)
-//
-// Oczywiście do zastąpienia prawdziwymi funkcjami
-
 #include "dictionary.h"
 #include "str.h"
 #include <wctype.h>
 
-struct dictionary *dict = NULL;
-char *lang = NULL;
+struct dictionary *dict = NULL;     ///< Aktywny słownik
+char *lang = NULL;                  ///< Aktywny język (= nazwa słownika)
 
+/**
+ * Zamienia tekst na małoliterowy i obcina końcowe nielitery.
+ * 
+ * @param[in] s Tekst.
+ * @return Przetworzony tekst.
+ */
 wchar_t *better_word(wchar_t *s)
 {
     wchar_t *ss = s;
@@ -68,8 +84,12 @@ wchar_t *better_word(wchar_t *s)
     return string_undress(st);
 }
 
-// Procedurka obsługi
-
+/**
+ * Sprawdza aktualne słowo.
+ * 
+ * @param[in] item Item.
+ * @param[in] data Dane.
+ */
 static void WhatCheck (GtkMenuItem *item, gpointer data) {
   GtkWidget *dialog;
   GtkTextIter start, end;
@@ -200,14 +220,26 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
         {
             const char *slowo = gtk_entry_get_text(GTK_ENTRY(entry));
             wchar_t *wslowo = (wchar_t*)g_utf8_to_ucs4_fast(slowo, -1, NULL);
-            // Wstaw do słownika
-            dictionary_insert(dict, wslowo);
-            // Usuwamy stare
-            gtk_text_buffer_delete(editor_buf, &start, &end);
-            // Wstawiamy nowe
-            gtk_text_buffer_insert(editor_buf, &start, slowo, -1);
-            
-            free(wslowo);
+            wchar_t *bslowo = better_word(wslowo);
+            if(wcslen(wslowo) != wcslen(bslowo))
+            {
+                GtkWidget *errdlg;
+                errdlg = gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+                                    "Podałeś ńe poprafne słofo (słe znaki)");
+                gtk_dialog_run(GTK_DIALOG(errdlg));
+                gtk_widget_destroy(errdlg);
+            }
+            else
+            {
+                // Wstaw do słownika
+                dictionary_insert(dict, bslowo);
+                // Usuwamy stare
+                gtk_text_buffer_delete(editor_buf, &start, &end);
+                // Wstawiamy nowe
+                gtk_text_buffer_insert(editor_buf, &start, slowo, -1);
+            }
+            g_free(wslowo);
+            free(bslowo);
         }
         gtk_widget_destroy(dialog_add);
     }
@@ -218,7 +250,12 @@ static void WhatCheck (GtkMenuItem *item, gpointer data) {
   free(wword);
 }
 
-
+/**
+ * Ustawia język.
+ * 
+ * @param[in] item Item.
+ * @param[in] data Dane.
+ */
 static void SelLang (GtkMenuItem *item, gpointer data) {
     GtkWidget *dialog;
     GtkWidget *vbox, *label, *combo;
@@ -330,8 +367,12 @@ static void SelLang (GtkMenuItem *item, gpointer data) {
     gtk_widget_destroy(dialog);
 }
 
-extern GtkTextBuffer *editor_buf;
-
+/**
+ * Koloruje błędy.
+ * 
+ * @param[in] item Item.
+ * @param[in] data Dane.
+ */
 void Blooden(GtkMenuItem *item, gpointer data)
 {
     if(dict == NULL)
@@ -349,7 +390,7 @@ void Blooden(GtkMenuItem *item, gpointer data)
     while(1) {
         if(gtk_text_iter_is_end(&end)) break;
         char *word;
-        gtk_text_iter_forward_word_end(&end); 
+        gtk_text_iter_forward_word_end(&end);
         start = end;
         gtk_text_iter_backward_word_start(&start); 
         word = gtk_text_iter_get_text(&start, &end);
@@ -370,6 +411,12 @@ void Blooden(GtkMenuItem *item, gpointer data)
     }
 }
 
+/**
+ * Ukrywa kolorowanie błędów.
+ * 
+ * @param[in] item Item.
+ * @param[in] data Dane.
+ */
 void Cleanse(GtkMenuItem *item, gpointer data)
 {
     GtkTextIter start, end;
@@ -378,6 +425,12 @@ void Cleanse(GtkMenuItem *item, gpointer data)
     gtk_text_buffer_remove_all_tags(editor_buf, &start, &end);
 }
 
+/**
+ * Zapisuje słowniki przed zamknięciem.
+ * 
+ * @param[in] widget Widget.
+ * @param[in] data Dane.
+ */
 static void destroy (GtkWidget *widget, gpointer data) {
   // For security save the dictionary
   if(lang != NULL && dict != NULL)
@@ -390,8 +443,11 @@ static void destroy (GtkWidget *widget, gpointer data) {
   gtk_main_quit();
 }
 
-// Tutaj dodacie nowe pozycje menu
-
+/**
+ * Dodaje pozycje do menu.
+ * 
+ * @param[in] menubar Baton z menu.
+ */
 void extend_menu (GtkWidget *menubar) {
   GtkWidget *spell_menu_item, *spell_menu, *check_item, *choose_lang, *blooden, *cleanse;
 
@@ -428,5 +484,5 @@ void extend_menu (GtkWidget *menubar) {
   g_signal_connect(editor_window, "destroy",
                    G_CALLBACK(destroy), NULL);
 }
-
+/*EOL*/
 /*EOF*/

@@ -57,7 +57,7 @@ static int * intptr(int v)
 /**
  * Testuje dodawanie listy do listy.
  */
-static int list_add_list_test(void **rubbish)
+static void list_add_list_test(void **rubbish)
 {
     int *a = intptr(21);
     int *b = intptr(18);
@@ -85,7 +85,7 @@ static int list_add_list_test(void **rubbish)
     
     list_add_list(x, y);
     assert_int_equal(list_size(x), 10);
-    int **L = list_get(x);
+    int **L = (int**)list_get(x);
     assert_true(L[0] == a);
     assert_true(L[1] == b);
     assert_true(L[2] == c);
@@ -142,7 +142,7 @@ static void list_reserve_copy_test(void **rubbish)
     int nc = 4 * list_capacity(x) + 7;
     list_reserve(x, nc);
     assert_int_equal(list_size(x), 5);
-    int **L = list_get(x);
+    int **L = (int**)list_get(x);
     assert_true(L[0] == a);
     assert_true(L[1] == b);
     assert_true(L[2] == c);
@@ -187,13 +187,13 @@ static void list_sort_and_unify_test(void **rubbish)
     struct list *k = list_init();
     list_sort_and_unify(l, sorter, comparer, k);
     assert_int_equal(list_size(l), 4);
-    int **L = list_get(l);
+    int **L = (int**)list_get(l);
     assert_true(L[0] == c);
     assert_true(L[1] == j);
     assert_true(L[2] == a);
     assert_true(L[3] == e);
     assert_int_equal(list_size(k), 6);
-    L = list_get(k);
+    L = (int**)list_get(k);
     assert_true(L[0] == g);
     assert_true(L[1] == d);
     assert_true(L[2] == i);

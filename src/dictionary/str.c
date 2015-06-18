@@ -13,12 +13,17 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+/**
+ * String.
+ */
 struct string
 {
-    wchar_t *buffer;
-    size_t size;
-    size_t capacity;
+    wchar_t *buffer;        ///< Bufor.
+    size_t size;            ///< Długość stringa bez nula.
+    size_t capacity;        ///< Pojemność bufora.
 };
 
 struct string *string_make(const wchar_t *s)
@@ -50,7 +55,7 @@ wchar_t * string_undress(struct string *s)
 int string_reserve(struct string *s, size_t c)
 {
     if(s->size+1 > c) c = s->size+1;
-    void **na = malloc(c * sizeof(wchar_t));
+    wchar_t *na = malloc(c * sizeof(wchar_t));
     memcpy(na, s->buffer, s->size * sizeof(wchar_t));
     free(s->buffer);
     na[s->size] = 0;

@@ -12,6 +12,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <wchar.h>
 
 int int32_serialize(int value, FILE *f)
 {

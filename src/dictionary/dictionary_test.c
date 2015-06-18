@@ -104,6 +104,9 @@ static void dictionary_hints_test(void **state)
     dictionary_done(dict);
 }
 
+/**
+ * Uruchamia testy.
+ */
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(dictionary_new_done_test),

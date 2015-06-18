@@ -623,7 +623,7 @@ static int text_sorter(const void *a, const void *b)
  * @{
  */
 
-struct hint_rule * rule_make(wchar_t *src, wchar_t *dst, int cost, enum rule_flag flag)
+struct hint_rule * rule_make(const wchar_t *src, const wchar_t *dst, int cost, enum rule_flag flag)
 {
     if(src == NULL || dst == NULL) return NULL;
     if(cost <= 0) return NULL;
@@ -633,7 +633,7 @@ struct hint_rule * rule_make(wchar_t *src, wchar_t *dst, int cost, enum rule_fla
     char memry[10];
     for(int i = 0; i < 10; i++)
         memry[i] = 0;
-    wchar_t *s = dst;
+    const wchar_t *s = dst;
     while(*s != 0)
     {
         if(*s >= L'0' && *s <= L'9') memry[*s - L'0'] = 1;

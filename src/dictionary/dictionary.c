@@ -109,7 +109,7 @@ bool dictionary_find(const struct dictionary *dict, const wchar_t* word)
 int dictionary_save(const struct dictionary *dict, FILE* stream)
 {
     if(trie_serialize(dict->root, stream)<0) return -1;
-    if(list_serialize(dict->rules, stream, rule_serialize)<0) return -1;
+    if(list_serialize(dict->rules, stream, (int(*)(void*,FILE*))rule_serialize)<0) return -1;
     if(int32_serialize(dict->max_cost, stream)<0) return -1;
     return 0;
 }
@@ -118,7 +118,7 @@ struct dictionary * dictionary_load(FILE* stream)
 {
     struct trie_node * root = trie_deserialize(stream);
     if(root == NULL) goto fail;
-    struct list *rules = list_deserialize(stream, rule_deserialize);
+    struct list *rules = list_deserialize(stream, (void * (*)(FILE*))rule_deserialize);
     if(rules == NULL) goto fail;
     int mcost;
     if(int32_deserialize(&mcost, stream)<0) goto fail;

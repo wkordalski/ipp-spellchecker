@@ -80,15 +80,15 @@ char* test_fgets(char *str, int cnt)
     return str;
 }
 
-wchar_t wbuff[1024];		// Bufor pliku dla operacji na wide-stringach.
-int wreadp = 0;			// Pozycja czytania.
-int wwritep = 0;		// Pozycja pisania.
-int wfilelen = 0;		// Rozmiar pliku
+wchar_t wbuff[1024];		///< Bufor pliku dla operacji na wide-stringach.
+int wreadp = 0;			    ///< Pozycja czytania.
+int wwritep = 0;		    ///< Pozycja pisania.
+int wfilelen = 0;		    ///< Rozmiar pliku
 
 /**
  * Mock function for fputwc.
  *
- * @param[in] Character to put.
+ * @param[in] c Character to put.
  * @return -1 if error occured, 0 otherwise.
  */
 int test_fputwc(wchar_t c)
