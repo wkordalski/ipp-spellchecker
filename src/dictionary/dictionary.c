@@ -48,7 +48,8 @@ struct dictionary
  */
 int dict_file_filter(const struct dirent *f)
 {
-    if(f->d_type != DT_REG) return 0;
+    // Do not work on some systems!!!
+    //if(f->d_type != DT_REG) return 0;
     int len = strlen(f->d_name);
     if(len < 5) return 0;
     if(strcmp(f->d_name + len - 5, ".dict")) return 0;
@@ -151,7 +152,13 @@ int dictionary_lang_list(char **list, size_t *list_len)
 {
     struct dirent **output = NULL;
     int r = scandir(CONF_PATH, &output, dict_file_filter, alphasort);
-    if(r < 0) return r;
+    if(r < 0)
+    {
+        *list = malloc(sizeof(char));
+        (*list)[0] = 0;
+        *list_len = 1;
+        return r;
+    }
     if(r == 0 || output == NULL)
     {
         *list = malloc(sizeof(char));
@@ -179,9 +186,11 @@ int dictionary_lang_list(char **list, size_t *list_len)
         size_t len = strlen(output[i]->d_name) - 5;
         memcpy(*list + clen, output[i]->d_name, len);
         clen += len + 1;
+        free(output[i]);
     }
+    free(output);
     *list_len = slen;
-    return 1;
+    return 0;
 }
 
 struct dictionary * dictionary_load_lang(const char *lang)
