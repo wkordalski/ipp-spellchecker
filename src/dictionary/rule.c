@@ -428,6 +428,7 @@ void find_rules_with_cost(int c, struct list *l, struct hint_rule ***o, int *s)
  * @param[in] c Koszt reguły do zastosowania.
  * @param[in] root Korzeń drzewa TRIE.
  * @param[in] pp Wynik preprocessingu.
+ * @param[in] begin Stan początkowy.
  * @return Lista stanów pochodnych.
  */
 static struct list * apply_rules_to_states(struct list *s, int c, const struct trie_node *root, struct list **pp, struct state *begin)
@@ -527,7 +528,6 @@ static int locale_sorter(const void *a, const void *b)
  * 
  * @param[in] s Aktualny stan.
  * @param[in] l Lista, gdzie zapisać wynik.s
- * @param[in] prev Wskaźnik w drzewie TRIE wskazujący na pierwszy wyraz słowa jeśli istniały dwa.
  */
 static void get_text_helper(struct state *s, struct list *l)
 {

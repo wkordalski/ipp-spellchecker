@@ -304,7 +304,7 @@ static void preprocess_suffix_end_flag_2_test(void **state)
     struct hint_rule **rules = malloc(2 * sizeof(struct hint_rule*));
     rules[0] = rule_make(L"nie", L"tak", 1, RULE_END);
     rules[1] = NULL;
-    struct hint_rule ***output = preprocess_suffix(rules, 1, L"nie", false);
+    struct list *output = preprocess_suffix(rules, 1, L"nie", false);
     assert_int_equal(list_size(output), 1);
     struct hint_rule **out = (struct hint_rule**)list_get(output);
     assert_true(out[0] == rules[0]);
@@ -899,7 +899,7 @@ static void apply_rules_to_states_closed_state_test(void **rubbish)
     rules[1] = cr;
     rules[2] = NULL;
     
-    struct hint_rule ****pp = preprocess(rules, suf);
+    struct list **pp = preprocess(rules, suf);
     struct list * l = apply_rules_to_states(states, 1, d, pp, NULL);
     
     assert_int_equal(list_size(l), 0);
@@ -1239,7 +1239,6 @@ static void rule_generate_hints_4_test(void **state)
     
     struct list *l = rule_generate_hints(r, 10, 100, d, L"a");
     assert_int_equal(list_size(l), 0);
-    wchar_t **ss = (wchar_t **)list_get(l);
     list_done(l);
     rule_done(r[0]);
     
