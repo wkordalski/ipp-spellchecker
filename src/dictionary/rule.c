@@ -436,7 +436,7 @@ static struct list * apply_rule(struct state *s, struct hint_rule *r, const stru
  * @param[in] pp Wynik preprocessingu.
  * @return Lista stanów pochodnych.
  */
-static struct list * apply_rules_to_states(struct list *s, int c, const struct trie_node *root, struct hint_rule ****pp)
+static struct list * apply_rules_to_states(struct list *s, int c, const struct trie_node *root, struct hint_rule ****pp, struct state *begin)
 {
     struct state ** sts = (struct state**)list_get(s);
     struct list *ret = list_init();
@@ -444,6 +444,11 @@ static struct list * apply_rules_to_states(struct list *s, int c, const struct t
     {
         struct list *std = list_init();
         struct state *ss = sts[i];
+        if(begin != ss  && ss->rule != NULL && ss->rule->flag == RULE_BEGIN)
+        {
+            list_done(std);
+            continue;
+        }
         if(ss->rule != NULL && ss->rule->flag == RULE_END)
         {
             list_done(std);
@@ -705,7 +710,7 @@ struct list * rule_generate_hints(struct hint_rule **rules, int max_cost, int ma
         for(int j = 1; j <= i; j++)
         {
             int lno = i - j;
-            list_add_list_and_free(layers[i], apply_rules_to_states(layers[lno], j, root, pp));
+            list_add_list_and_free(layers[i], apply_rules_to_states(layers[lno], j, root, pp, is));
         }
         unify_states(layers, i);
         struct state **li = (struct state **)list_get(layers[i]);

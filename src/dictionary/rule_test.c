@@ -50,7 +50,7 @@ extern void free_preprocessing_data(struct hint_rule ****pp, int wlen);
 extern struct list * extend_state(struct state *s);
 extern void explore_trie(const struct trie_node *n, wchar_t *dst, wchar_t memory[10], struct list *l, struct state *ps, struct hint_rule *r, const wchar_t *suf, const struct trie_node *root, wchar_t last_guessed);
 extern struct list * apply_rule(struct state *s, struct hint_rule *r, const struct trie_node *root);
-extern struct list * apply_rules_to_states(struct list *s, int c, const struct trie_node *root, struct hint_rule ****pp);
+extern struct list * apply_rules_to_states(struct list *s, int c, const struct trie_node *root, struct hint_rule ****pp, struct state *begin);
 extern void unify_states(struct list **ll, int mc);
 extern wchar_t * get_text(struct state *s);
 extern int text_sorter(void *a, void *b);
@@ -846,7 +846,7 @@ static void apply_rules_to_states_test(void **rubbish)
     rules[2] = NULL;
     
     struct hint_rule ****pp = preprocess(rules, suf);
-    struct list * l = apply_rules_to_states(states, 1, d, pp);
+    struct list * l = apply_rules_to_states(states, 1, d, pp, s1);
     
     assert_int_equal(list_size(l), 3);
     struct state **ss = (struct state **)list_get(l);
@@ -926,7 +926,7 @@ static void apply_rules_to_states_closed_state_test(void **rubbish)
     rules[2] = NULL;
     
     struct hint_rule ****pp = preprocess(rules, suf);
-    struct list * l = apply_rules_to_states(states, 1, d, pp);
+    struct list * l = apply_rules_to_states(states, 1, d, pp, NULL);
     
     assert_int_equal(list_size(l), 0);
     
@@ -1249,6 +1249,29 @@ static void rule_generate_hints_3_test(void **state)
     trie_done(d);
 }
 
+/**
+ * Testuje generowanie podpowiedzi.
+ * Sprawdza czy zakazywane jest wielokrotne użycie reguły typu BEGIN.
+ */
+static void rule_generate_hints_4_test(void **state)
+{
+    setlocale(LC_ALL, "pl_PL.UTF8");
+    struct trie_node *d = trie_init();
+    trie_insert(d, L"bba");
+    
+    struct hint_rule *r[2];
+    r[0] = rule_make(L"", L"b", 1, RULE_BEGIN);
+    r[1] = NULL;
+    
+    struct list *l = rule_generate_hints(r, 10, 100, d, L"a");
+    assert_int_equal(list_size(l), 0);
+    wchar_t **ss = (wchar_t **)list_get(l);
+    list_done(l);
+    rule_done(r[0]);
+    
+    trie_done(d);
+}
+
 /// Uruchamia testy.
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -1291,6 +1314,7 @@ int main(void) {
         cmocka_unit_test(rule_generate_hints_1_test),
         cmocka_unit_test(rule_generate_hints_2_test),
         cmocka_unit_test(rule_generate_hints_3_test),
+        cmocka_unit_test(rule_generate_hints_4_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
