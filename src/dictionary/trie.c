@@ -79,6 +79,7 @@ static int trie_get_child_index(const struct trie_node *node, wchar_t value, int
 {
     assert(trie_node_integrity(node));
     assert(0 <= begin && begin <= end && end <= node->cnt);
+    assert(value != 0 && "Special value only for root!");
     if(node->chd == NULL) return -1;
     while(end - begin > 2)
     {
@@ -502,6 +503,11 @@ const wchar_t * trie_get_value_ptr(const struct trie_node *node)
 bool trie_is_leaf(const struct trie_node *node)
 {
     return node->leaf;
+}
+
+bool trie_is_root(const struct trie_node* node)
+{
+    return node->val == 0;
 }
 
 void trie_hints(struct trie_node *root, const wchar_t *word, struct word_list *list, struct list *rules, int max_cost, int max_hints_no)

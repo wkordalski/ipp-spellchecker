@@ -545,12 +545,11 @@ static int locale_sorter(const void *a, const void *b)
  * @param[in] l Lista, gdzie zapisać wynik.s
  * @param[in] prev Wskaźnik w drzewie TRIE wskazujący na pierwszy wyraz słowa jeśli istniały dwa.
  */
-static void get_text_helper(struct state *s, struct list *l, const struct trie_node *prev)
+static void get_text_helper(struct state *s, struct list *l)
 {
     if(s->prnt == NULL) return;
-    get_text_helper(s->prnt, l, prev);
+    get_text_helper(s->prnt, l);
     
-    if(trie_get_value(s->node) == 0 && s->prnt != NULL && s->prnt->node == prev) list_add(l, NULL);
     if(s->rule == NULL)
     {
         list_add(l, (void*)trie_get_value_ptr(s->node));
@@ -570,6 +569,8 @@ static void get_text_helper(struct state *s, struct list *l, const struct trie_n
             dst++;
         }
     }
+    // when used split rule -> add space
+    if(s->rule != NULL && s->rule->flag == RULE_SPLIT) list_add(l, NULL);
 }
 
 /**
@@ -581,7 +582,7 @@ static void get_text_helper(struct state *s, struct list *l, const struct trie_n
 static wchar_t * get_text(struct state *s)
 {
     struct list *l = list_init();
-    get_text_helper(s, l, s->prev);
+    get_text_helper(s, l);
     wchar_t *rt = malloc((list_size(l)+1)*sizeof(wchar_t));
     wchar_t **ls = (wchar_t**)list_get(l);
     for(int i = 0; i < list_size(l); i++)

@@ -131,6 +131,13 @@ const wchar_t * trie_get_value_ptr(const struct trie_node *node);
 bool trie_is_leaf(const struct trie_node *node);
 
 /**
+ * Sprawdza, czy węzeł jest korzeniem.
+ * @param[in] node Węzeł.
+ * @return Czy węzeł jest korzeniem.
+ */
+bool trie_is_root(const struct trie_node *node);
+
+/**
  * Znajduje wyrazy podobne do podanego w drzewie.
  * 
  * @param[in] root Drzewo do przeszukania.

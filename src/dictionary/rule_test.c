@@ -339,7 +339,7 @@ static void preprocess_suffix_end_flag_2_test(void **state)
     free(rules);
 }
 /// Testuje rozwijanie stanu.
-static void extend_state_test(void **rubbish)
+static void extend_state_1_test(void **rubbish)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
     struct trie_node *d = trie_init();
@@ -388,6 +388,38 @@ static void extend_state_test(void **rubbish)
     list_done(l);
     trie_done(d);
 }
+
+/// Testuje rozwijanie stanu.
+static void extend_state_2_test(void **rubbish)
+{
+    setlocale(LC_ALL, "pl_PL.UTF8");
+    struct trie_node *d = trie_init();
+    trie_insert(d, L"z");
+    trie_insert(d, L"mleka");
+    const struct trie_node *d1 = trie_get_child(d, L'z');
+    
+    struct state *s = malloc(sizeof(struct state));
+    const wchar_t *suf = L"zmleka";
+    s->node = d;
+    s->prev = NULL;
+    s->prnt = NULL;
+    s->rule = NULL;
+    s->suf = suf;
+    struct list *l = extend_state(s);
+    struct state **ss = (struct state **)list_get(l);
+    assert_int_equal(list_size(l), 2);
+    assert_true(ss[0] == s);
+    assert_true(ss[1]->suf == suf+1);
+    assert_true(ss[1]->rule == NULL);
+    assert_true(ss[1]->node == d1);
+    assert_true(ss[1]->prev == NULL);
+    assert_true(ss[1]->prnt == s);
+    free(ss[0]);
+    free(ss[1]);
+    list_done(l);
+    trie_done(d);
+}
+
 /// Testuje funkcję pomocniczą aplikującą regułę.
 static void explore_trie_noway_test(void **rubbish)
 {
@@ -1122,7 +1154,7 @@ static void text_sorter_test(void **state)
 }
 
 /// Testuje generowanie podpowiedzi.
-static void rule_generate_hints_test(void **state)
+static void rule_generate_hints_1_test(void **state)
 {
     setlocale(LC_ALL, "pl_PL.UTF8");
     struct trie_node *d = trie_init();
@@ -1165,6 +1197,58 @@ static void rule_generate_hints_test(void **state)
     trie_done(d);
 }
 
+/// Testuje generowanie podpowiedzi.
+static void rule_generate_hints_2_test(void **state)
+{
+    setlocale(LC_ALL, "pl_PL.UTF8");
+    struct trie_node *d = trie_init();
+    trie_insert(d, L"z");
+    trie_insert(d, L"mleka");
+    
+    struct hint_rule *r[2];
+    r[0] = rule_make(L"0", L"0", 1, RULE_SPLIT);
+    r[1] = NULL;
+    
+    struct list *l = rule_generate_hints(r, 10, 100, d, L"zmleka");
+    assert_int_equal(list_size(l), 1);
+    wchar_t **ss = (wchar_t **)list_get(l);
+    assert_true(wcscmp(ss[0], L"z mleka")==0);
+    for(int i = 0; i < list_size(l); i++)
+    {
+        free(ss[i]);
+    }
+    list_done(l);
+    rule_done(r[0]);
+    
+    trie_done(d);
+}
+
+/// Testuje generowanie podpowiedzi.
+static void rule_generate_hints_3_test(void **state)
+{
+    setlocale(LC_ALL, "pl_PL.UTF8");
+    struct trie_node *d = trie_init();
+    trie_insert(d, L"z");
+    trie_insert(d, L"mleka");
+    
+    struct hint_rule *r[2];
+    r[0] = rule_make(L"", L"", 1, RULE_SPLIT);
+    r[1] = NULL;
+    
+    struct list *l = rule_generate_hints(r, 10, 100, d, L"zmleka");
+    assert_int_equal(list_size(l), 1);
+    wchar_t **ss = (wchar_t **)list_get(l);
+    assert_true(wcscmp(ss[0], L"z mleka")==0);
+    for(int i = 0; i < list_size(l); i++)
+    {
+        free(ss[i]);
+    }
+    list_done(l);
+    rule_done(r[0]);
+    
+    trie_done(d);
+}
+
 /// Uruchamia testy.
 int main(void) {
     const struct CMUnitTest tests[] = {
@@ -1186,7 +1270,8 @@ int main(void) {
         cmocka_unit_test(preprocess_suffix_begin_flag_2_test),
         cmocka_unit_test(preprocess_suffix_end_flag_1_test),
         cmocka_unit_test(preprocess_suffix_end_flag_2_test),
-        cmocka_unit_test(extend_state_test),
+        cmocka_unit_test(extend_state_1_test),
+        cmocka_unit_test(extend_state_2_test),
         cmocka_unit_test(explore_trie_noway_test),
         cmocka_unit_test(explore_trie_letter_test),
         cmocka_unit_test(explore_trie_constrained_jocker_test),
@@ -1203,8 +1288,11 @@ int main(void) {
         cmocka_unit_test(unify_states_test),
         cmocka_unit_test(get_text_test),
         cmocka_unit_test(text_sorter_test),
-        cmocka_unit_test(rule_generate_hints_test),
+        cmocka_unit_test(rule_generate_hints_1_test),
+        cmocka_unit_test(rule_generate_hints_2_test),
+        cmocka_unit_test(rule_generate_hints_3_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
+
