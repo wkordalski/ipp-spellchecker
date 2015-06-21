@@ -126,6 +126,7 @@ static bool pattern_matches(const wchar_t *pattern, const wchar_t *text, wchar_t
     for(int i = 0; i < 10; i++) memory[i] = 0;
     while(*pattern != 0)
     {
+        if(*text == 0) return false;
         if(iswalpha(*pattern))
         {
             if(*pattern != *text) return false;
@@ -134,7 +135,7 @@ static bool pattern_matches(const wchar_t *pattern, const wchar_t *text, wchar_t
         else if(*pattern >= L'0' && *pattern <= L'9')
         {
             int addr = *pattern - L'0';
-            if(memory[addr] == 0 || memory[addr] == 1)
+            if(memory[addr] == 0)
             {
                 memory[addr] = *text;
                 pattern++; text++;
@@ -194,11 +195,11 @@ static int rule_cost_sorter(const void *a, const void *b)
  * @return Wskaźnik na tablicę list wskaźników na reguły.
  * Tablica jest indeksowana po kosztach reguł.
  */
-static struct hint_rule *** preprocess_suffix(struct hint_rule **rules, int rcnt, const wchar_t *word, bool begin)
+static struct list * preprocess_suffix(struct hint_rule **rules, int rcnt, const wchar_t *word, bool begin)
 {
     // Sprawdzić, które reguły pasują
-    struct hint_rule ** partial = malloc(rcnt * sizeof(struct hint_rule*));
-    struct hint_rule ** partial_end = partial;
+    struct list *ret = list_init();
+    list_reserve(ret, rcnt);    // So O(1) additions only
     
     for(int i = 0; i < rcnt; i++)
     {
@@ -208,49 +209,18 @@ static struct hint_rule *** preprocess_suffix(struct hint_rule **rules, int rcnt
         {
             if(it->flag == RULE_BEGIN && begin == false) continue;
             if(it->flag == RULE_END && wcslen(it->src) != wcslen(word)) continue;
-            *partial_end = it;
-            partial_end++;
+            list_add(ret, it);
         }
     }
-    if(partial == partial_end)
+    if(list_size(ret) == 0)
     {
-        free(partial);
-        struct hint_rule *** output = malloc(sizeof(struct hint_rule**));
-        output[0] = NULL;
-        return output;
+        list_reserve(ret, 0);   // Shrink maximally to save memory
+        return ret;
     }
     // Posortować reguły
-    qsort(partial, partial_end - partial, sizeof(struct hint_rule*), rule_cost_sorter);
-    // Przepisać do kubełków
-    int buckets_count = (*(partial_end-1))->cost+2;
-    struct hint_rule *** output = malloc(buckets_count * sizeof(struct hint_rule*));
-    for(int i = 0; i < buckets_count; i++) output[i] = NULL;
-    for(struct hint_rule **it = partial; it < partial_end;)
-    {
-        int cost = it[0]->cost;
-        int bsize = 0;
-        for(struct hint_rule **jt = it; jt < partial_end && jt[0]->cost == cost; jt++) bsize++;
-        struct hint_rule **bucket = malloc((bsize + 1) * sizeof(struct hint_rule*));
-        struct hint_rule **bucket_end = bucket;
-        for(; it < partial_end && it[0]->cost == cost; it++)
-        {
-            *bucket_end = *it;
-            bucket_end++;
-        }
-        *bucket_end = NULL;
-        output[cost] = bucket;
-    }
-    // Last one should be simply NULL!
-    for(int i = 0; i < buckets_count - 1; i++)
-    {
-        if(output[i] == NULL)
-        {
-            output[i] = malloc(sizeof(struct hint_rule*));
-            output[i][0] = NULL;
-        }
-    }
-    free(partial);
-    return output;
+    list_sort(ret, rule_cost_sorter);
+    list_reserve(ret, 0);
+    return ret;
 }
 
 /**
@@ -261,13 +231,13 @@ static struct hint_rule *** preprocess_suffix(struct hint_rule **rules, int rcnt
  * @return Wskaźnik na dwuwymiarową tablicę list wskaźników na reguły.
  * Tablica jest indeksowana po 1. długości sufiksu, 2. koszcie reguł.
  */
-static struct hint_rule **** preprocess(struct hint_rule **rules, const wchar_t *word)
+static struct list ** preprocess(struct hint_rule **rules, const wchar_t *word)
 {
     int rcnt = 0;
     while(rules[rcnt] != NULL) rcnt++;
     int wlen = wcslen(word);
-    struct hint_rule ****output = malloc((wlen+1) * sizeof(struct hint_rule***));
-    struct hint_rule ****output_walker = output + wlen;
+    struct list **output = malloc((wlen+1) * sizeof(struct list*));
+    struct list **output_walker = output + wlen;
     bool begin = true;
     while(*word != 0)
     {
@@ -285,13 +255,9 @@ static struct hint_rule **** preprocess(struct hint_rule **rules, const wchar_t 
  * 
  * @param[in] pp Wskaźnik zwrócony przez tą funkcję.
  */
-static void free_preprocessing_data_for_suffix(struct hint_rule ***pp)
+static void free_preprocessing_data_for_suffix(struct list *pp)
 {
-    for(struct hint_rule ***it = pp; *it != NULL; it++)
-    {
-        free(*it);
-    }
-    free(pp);
+    list_done(pp);
 }
 
 /**
@@ -300,7 +266,7 @@ static void free_preprocessing_data_for_suffix(struct hint_rule ***pp)
  * @param[in] pp Wskaźnik zwrócony przez tą funkcję.
  * @param[in] wlen Długość słowa, dla którego szukaliśmy podpowiedzi.
  */
-static void free_preprocessing_data(struct hint_rule ****pp, int wlen)
+static void free_preprocessing_data(struct list **pp, int wlen)
 {
     for(int i = 0; i <= wlen; i++)
     {
@@ -428,6 +394,34 @@ static struct list * apply_rule(struct state *s, struct hint_rule *r, const stru
 }
 
 /**
+ * Znajduje reguły o danym koszcie na posortowanej liście.
+ * 
+ * @param[in] c Koszt.
+ * @param[in] l Posortowana lista.
+ * @param[out] o Wskaźnik na pierwszą regułę o danym koszcie.
+ * @param[out] s Liczba elementów o danym koszcie.
+ */
+void find_rules_with_cost(int c, struct list *l, struct hint_rule ***o, int *s)
+{
+    struct hint_rule *mock = rule_make(L"a", L"b", c, RULE_NORMAL);
+    struct hint_rule **lp = (struct hint_rule**)list_get(l);
+    struct hint_rule **lq = lp + list_size(l);
+    struct hint_rule **lb = bsearch(&mock, lp, list_size(l), sizeof(void*), rule_cost_sorter);
+    struct hint_rule **le = lb;
+    rule_done(mock);
+    if(lb == NULL)
+    {
+        *s = 0;
+        *o = NULL;
+        return;
+    }
+    while(le < lq && le[0]->cost == c) le++;
+    while(lb > lp && lb[-1]->cost == c) lb--;
+    *o = lb;
+    *s = le - lb;
+}
+
+/**
  * Próbuje zaaplikować reguły do stanów.
  * 
  * @param[in] s Lista stanów.
@@ -436,7 +430,7 @@ static struct list * apply_rule(struct state *s, struct hint_rule *r, const stru
  * @param[in] pp Wynik preprocessingu.
  * @return Lista stanów pochodnych.
  */
-static struct list * apply_rules_to_states(struct list *s, int c, const struct trie_node *root, struct hint_rule ****pp, struct state *begin)
+static struct list * apply_rules_to_states(struct list *s, int c, const struct trie_node *root, struct list **pp, struct state *begin)
 {
     struct state ** sts = (struct state**)list_get(s);
     struct list *ret = list_init();
@@ -454,29 +448,14 @@ static struct list * apply_rules_to_states(struct list *s, int c, const struct t
             list_done(std);
             continue;
         }
-        struct hint_rule ***rg = pp[wcslen(ss->suf)];
-        bool hasc = true;
-        for(int i = 0; i < c; i++)
+        // Find specific rules (filter costs) in pp
+        struct list *rg = pp[wcslen(ss->suf)];
+        struct hint_rule **rs = NULL;
+        int rl = 0;
+        find_rules_with_cost(c, rg, &rs, &rl);
+        for(int i = 0; i < rl; i++, rs++)
         {
-            if(rg[i] == NULL) 
-            {
-                hasc = false;
-                break;
-            }
-        }
-        if(hasc)
-        {
-            struct hint_rule **hrg = pp[wcslen(ss->suf)][c];
-            if(hrg != NULL)
-            {
-                while(*hrg != NULL)
-                {
-                    struct list *lst = apply_rule(ss, *hrg, root);
-                    list_add_list(std, lst);
-                    list_done(lst);
-                    hrg++;
-                }
-            }
+            list_add_list_and_free(std, apply_rule(ss, *rs, root));
         }
         list_add_list_and_free(ret, std);
     }
@@ -678,7 +657,7 @@ void rule_done(struct hint_rule *rule)
 struct list * rule_generate_hints(struct hint_rule **rules, int max_cost, int max_hints_no, struct trie_node *root, const wchar_t *word)
 {
     int wlen = wcslen(word);
-    struct hint_rule ****pp = preprocess(rules, word);
+    struct list **pp = preprocess(rules, word);
     struct state *is = malloc(sizeof(struct state));
     is->node = root;
     is->prev = NULL;
