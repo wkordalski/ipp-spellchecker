@@ -43,8 +43,8 @@ struct costed_state
 
 extern bool pattern_matches(const wchar_t *pattern, const wchar_t *text, wchar_t memory[10]);
 extern wchar_t translate_letter(wchar_t c, wchar_t memory[10]);
-extern struct list * preprocess_suffix(struct hint_rule **rules, int rcnt, const wchar_t *word, bool begin);
-extern struct list ** preprocess(struct hint_rule **rules, const wchar_t *word);
+extern struct list * preprocess_suffix(struct hint_rule **rules, int rcnt, const wchar_t *word, bool begin, int max_cost);
+extern struct list ** preprocess(struct hint_rule **rules, const wchar_t *word, int max_cost);
 extern void free_preprocessing_data_for_suffix(struct list *pp);
 extern void free_preprocessing_data(struct list **pp, int wlen);
 extern struct list * extend_state(struct state *s);
@@ -170,7 +170,7 @@ static void preprocess_suffix_no_rule_test(void **state)
     setlocale(LC_ALL, "pl_PL.UTF8");
     struct hint_rule **rules = malloc(sizeof(struct hint_rule*));
     rules[0] = NULL;
-    struct list *output = preprocess_suffix(rules, 0, L"umlambo", false);
+    struct list *output = preprocess_suffix(rules, 0, L"umlambo", false, 100);
     assert_int_equal(list_size(output), 0);
     free_preprocessing_data_for_suffix(output);
     free(rules);
@@ -182,7 +182,7 @@ static void preprocess_suffix_one_unmatching_rule_test(void **state)
     struct hint_rule **rules = malloc(2 * sizeof(struct hint_rule*));
     rules[0] = rule_make(L"izolo", L"ngomso", 7, RULE_NORMAL);
     rules[1] = NULL;
-    struct list *output = preprocess_suffix(rules, 1, L"namhlanje", false);
+    struct list *output = preprocess_suffix(rules, 1, L"namhlanje", false, 100);
     assert_int_equal(list_size(output), 0);
     free_preprocessing_data_for_suffix(output);
     rule_done(rules[0]);
@@ -196,7 +196,7 @@ static void preprocess_suffix_one_matching_rule_test(void **state)
     struct hint_rule **rules = malloc(2 * sizeof(struct hint_rule*));
     rules[0] = rule_make(L"izolo", L"ngomso", 7, RULE_NORMAL);
     rules[1] = NULL;
-    struct list *output = preprocess_suffix(rules, 1, L"izolo", false);
+    struct list *output = preprocess_suffix(rules, 1, L"izolo", false, 100);
     assert_int_equal(list_size(output), 1);
     assert_true(list_get(output)[0] == rules[0]);
     
@@ -213,7 +213,7 @@ static void preprocess_suffix_some_samecost_rules_test(void **state)
     rules[1] = rule_make(L"rzep", L"cokolwiek", 1, RULE_NORMAL);
     rules[2] = rule_make(L"0z", L"0ój", 1, RULE_NORMAL);
     rules[3] = NULL;
-    struct list *output = preprocess_suffix(rules, 3, L"rzepiasty", false);
+    struct list *output = preprocess_suffix(rules, 3, L"rzepiasty", false, 100);
     assert_int_equal(list_size(output), 3);
     struct hint_rule **out = (struct hint_rule**)list_get(output);
     assert_true(out[0] == rules[0]
@@ -241,7 +241,7 @@ static void preprocess_suffix_some_multicost_rules_test(void **state)
     rules[2] = rule_make(L"0z", L"0ój", 2, RULE_NORMAL);
     rules[3] = rule_make(L"01", L"10", 3, RULE_NORMAL);
     rules[4] = NULL;
-    struct list *output = preprocess_suffix(rules, 4, L"rzepiasty", false);
+    struct list *output = preprocess_suffix(rules, 4, L"rzepiasty", false, 100);
     assert_int_equal(list_size(output), 4);
     struct hint_rule **out = (struct hint_rule**)list_get(output);
     assert_true(out[0] == rules[0] || out[1] == rules[0]);
@@ -263,7 +263,7 @@ static void preprocess_suffix_begin_flag_1_test(void **state)
     struct hint_rule **rules = malloc(2 * sizeof(struct hint_rule*));
     rules[0] = rule_make(L"nie", L"tak", 1, RULE_BEGIN);
     rules[1] = NULL;
-    struct list *output = preprocess_suffix(rules, 1, L"nieludzki", false);
+    struct list *output = preprocess_suffix(rules, 1, L"nieludzki", false, 100);
     assert_int_equal(list_size(output), 0);
     free_preprocessing_data_for_suffix(output);
     rule_done(rules[0]);
@@ -276,7 +276,7 @@ static void preprocess_suffix_begin_flag_2_test(void **state)
     struct hint_rule **rules = malloc(2 * sizeof(struct hint_rule*));
     rules[0] = rule_make(L"nie", L"tak", 1, RULE_BEGIN);
     rules[1] = NULL;
-    struct list *output = preprocess_suffix(rules, 1, L"niewierzący", true);
+    struct list *output = preprocess_suffix(rules, 1, L"niewierzący", true, 100);
     assert_int_equal(list_size(output), 1);
     struct hint_rule **out = (struct hint_rule**)list_get(output);
     assert_true(out[0] == rules[0]);
@@ -291,7 +291,7 @@ static void preprocess_suffix_end_flag_1_test(void **state)
     struct hint_rule **rules = malloc(2 * sizeof(struct hint_rule*));
     rules[0] = rule_make(L"nie", L"tak", 1, RULE_END);
     rules[1] = NULL;
-    struct list *output = preprocess_suffix(rules, 1, L"niekończący", false);
+    struct list *output = preprocess_suffix(rules, 1, L"niekończący", false, 100);
     assert_int_equal(list_size(output), 0);
     free_preprocessing_data_for_suffix(output);
     rule_done(rules[0]);
@@ -304,7 +304,7 @@ static void preprocess_suffix_end_flag_2_test(void **state)
     struct hint_rule **rules = malloc(2 * sizeof(struct hint_rule*));
     rules[0] = rule_make(L"nie", L"tak", 1, RULE_END);
     rules[1] = NULL;
-    struct list *output = preprocess_suffix(rules, 1, L"nie", false);
+    struct list *output = preprocess_suffix(rules, 1, L"nie", false, 100);
     assert_int_equal(list_size(output), 1);
     struct hint_rule **out = (struct hint_rule**)list_get(output);
     assert_true(out[0] == rules[0]);
@@ -819,7 +819,7 @@ static void apply_rules_to_states_test(void **rubbish)
     struct hint_rule *r2 = rules[1] = rule_make(L"z", L"", 1, RULE_BEGIN);
     rules[2] = NULL;
     
-    struct list **pp = preprocess(rules, suf);
+    struct list **pp = preprocess(rules, suf, 100);
     struct list * l = apply_rules_to_states(states, 1, d, pp, s1);
     
     assert_int_equal(list_size(l), 3);
@@ -899,7 +899,7 @@ static void apply_rules_to_states_closed_state_test(void **rubbish)
     rules[1] = cr;
     rules[2] = NULL;
     
-    struct list **pp = preprocess(rules, suf);
+    struct list **pp = preprocess(rules, suf, 100);
     struct list * l = apply_rules_to_states(states, 1, d, pp, NULL);
     
     assert_int_equal(list_size(l), 0);

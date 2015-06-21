@@ -192,10 +192,11 @@ static int rule_cost_sorter(const void *a, const void *b)
  * @param[in] rcnt Liczba reguł na liście.
  * @param[in] word Sufiks.
  * @param[in] begin Czy sufiks jest całym słowem do wygenerowania podpowiedzi.
+ * @param[in] max_cost Maksymalny koszt podpowiedzi.
  * @return Wskaźnik na tablicę list wskaźników na reguły.
  * Tablica jest indeksowana po kosztach reguł.
  */
-static struct list * preprocess_suffix(struct hint_rule **rules, int rcnt, const wchar_t *word, bool begin)
+static struct list * preprocess_suffix(struct hint_rule **rules, int rcnt, const wchar_t *word, bool begin, int max_cost)
 {
     // Sprawdzić, które reguły pasują
     struct list *ret = list_init();
@@ -204,6 +205,7 @@ static struct list * preprocess_suffix(struct hint_rule **rules, int rcnt, const
     for(int i = 0; i < rcnt; i++)
     {
         struct hint_rule *it = rules[i];
+        if(it->cost > max_cost) continue;
         wchar_t memory[10];
         if(pattern_matches(it->src, word, memory))
         {
@@ -228,10 +230,11 @@ static struct list * preprocess_suffix(struct hint_rule **rules, int rcnt, const
  * 
  * @param[in] rules NULL-terminated lista reguł.
  * @param[in] word Słowo do wygenerowania podpowiedzi.
+ * @param[in] max_cost Maksymalny koszt podpowiedzi.
  * @return Wskaźnik na dwuwymiarową tablicę list wskaźników na reguły.
  * Tablica jest indeksowana po 1. długości sufiksu, 2. koszcie reguł.
  */
-static struct list ** preprocess(struct hint_rule **rules, const wchar_t *word)
+static struct list ** preprocess(struct hint_rule **rules, const wchar_t *word, int max_cost)
 {
     int rcnt = 0;
     while(rules[rcnt] != NULL) rcnt++;
@@ -241,12 +244,12 @@ static struct list ** preprocess(struct hint_rule **rules, const wchar_t *word)
     bool begin = true;
     while(*word != 0)
     {
-        *output_walker = preprocess_suffix(rules, rcnt, word, begin);
+        *output_walker = preprocess_suffix(rules, rcnt, word, begin, max_cost);
         output_walker--;
         word++;
         begin = false;
     }
-    *output = preprocess_suffix(rules, rcnt, word, begin);  // last one...
+    *output = preprocess_suffix(rules, rcnt, word, begin, max_cost);  // last one...
     return output;
 }
 
@@ -657,7 +660,7 @@ void rule_done(struct hint_rule *rule)
 struct list * rule_generate_hints(struct hint_rule **rules, int max_cost, int max_hints_no, struct trie_node *root, const wchar_t *word)
 {
     int wlen = wcslen(word);
-    struct list **pp = preprocess(rules, word);
+    struct list **pp = preprocess(rules, word, max_cost);
     struct state *is = malloc(sizeof(struct state));
     is->node = root;
     is->prev = NULL;
